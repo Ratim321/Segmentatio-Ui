@@ -1,5 +1,26 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Image as ImageIcon, Plus, Trash2, Edit2, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Upload, Image as ImageIcon, Plus, Trash2, Edit2, ArrowLeft, ArrowRight, X, LineChart, Activity, Brain } from 'lucide-react';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface Point {
   x: number;
@@ -18,8 +39,14 @@ interface CaseStudy {
   id: number;
   image: string;
   diagnosis: string;
-  segmentation: Polygon[];
   similarity: number;
+  metrics: {
+    volume: number;
+    density: number;
+    growth: number;
+    infiltration: number;
+  };
+  segmentation: Polygon[];
 }
 
 const COLORS = [
@@ -30,12 +57,39 @@ const COLORS = [
   { fill: 'fill-orange-500/20', stroke: 'stroke-orange-600', bg: 'bg-orange-500', name: 'Review' },
 ];
 
+const SAMPLE_IMAGES = [
+  {
+    id: 1,
+    thumbnail: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?auto=format&fit=crop&q=80&w=300&h=300",
+    result: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?auto=format&fit=crop&q=80&w=300&h=300",
+    type: "Brain MRI"
+  },
+  {
+    id: 2,
+    thumbnail: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?auto=format&fit=crop&q=80&w=300&h=300",
+    result: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?auto=format&fit=crop&q=80&w=300&h=300",
+    type: "Chest X-Ray"
+  },
+  {
+    id: 3,
+    thumbnail: "https://images.unsplash.com/photo-1576671081837-49000212a370?auto=format&fit=crop&q=80&w=300&h=300",
+    result: "https://images.unsplash.com/photo-1576671081837-49000212a370?auto=format&fit=crop&q=80&w=300&h=300",
+    type: "CT Scan"
+  }
+];
+
 const CASE_STUDIES: CaseStudy[] = [
   {
     id: 1,
     image: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?auto=format&fit=crop&q=80&w=300&h=300",
     diagnosis: "Brain Tumor - Glioblastoma",
     similarity: 89,
+    metrics: {
+      volume: 24.5,
+      density: 1.2,
+      growth: 0.8,
+      infiltration: 3.2
+    },
     segmentation: [
       {
         id: 'case1-1',
@@ -54,6 +108,12 @@ const CASE_STUDIES: CaseStudy[] = [
     image: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?auto=format&fit=crop&q=80&w=300&h=300",
     diagnosis: "Lung Nodule",
     similarity: 75,
+    metrics: {
+      volume: 12.3,
+      density: 0.9,
+      growth: 0.3,
+      infiltration: 1.8
+    },
     segmentation: [
       {
         id: 'case2-1',
@@ -95,26 +155,186 @@ export default function Demo() {
   const [currentCaseStudyIndex, setCurrentCaseStudyIndex] = useState(0);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const sampleImages = [
-    {
-      id: 1,
-      thumbnail: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?auto=format&fit=crop&q=80&w=300&h=300",
-      result: "https://images.unsplash.com/photo-1559757175-0eb30cd8c063?auto=format&fit=crop&q=80&w=300&h=300",
-      type: "Brain MRI"
-    },
-    {
-      id: 2,
-      thumbnail: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?auto=format&fit=crop&q=80&w=300&h=300",
-      result: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?auto=format&fit=crop&q=80&w=300&h=300",
-      type: "Chest X-Ray"
-    },
-    {
-      id: 3,
-      thumbnail: "https://images.unsplash.com/photo-1576671081837-49000212a370?auto=format&fit=crop&q=80&w=300&h=300",
-      result: "https://images.unsplash.com/photo-1576671081837-49000212a370?auto=format&fit=crop&q=80&w=300&h=300",
-      type: "CT Scan"
-    }
-  ];
+  const ComparisonModal = ({ onClose }: { onClose: () => void }) => {
+    const metrics = {
+      labels: ['Volume', 'Density', 'Growth Rate', 'Infiltration'],
+      datasets: [
+        {
+          label: 'Current Case',
+          data: [22.1, 1.1, 0.7, 2.9],
+          borderColor: 'rgb(59, 130, 246)',
+          backgroundColor: 'rgba(59, 130, 246, 0.5)',
+        },
+        {
+          label: 'Similar Case',
+          data: [
+            CASE_STUDIES[currentCaseStudyIndex].metrics.volume,
+            CASE_STUDIES[currentCaseStudyIndex].metrics.density,
+            CASE_STUDIES[currentCaseStudyIndex].metrics.growth,
+            CASE_STUDIES[currentCaseStudyIndex].metrics.infiltration,
+          ],
+          borderColor: 'rgb(234, 88, 12)',
+          backgroundColor: 'rgba(234, 88, 12, 0.5)',
+        },
+      ],
+    };
+
+    const options = {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top' as const,
+        },
+        title: {
+          display: true,
+          text: 'Disease Metrics Comparison',
+        },
+      },
+      scales: {
+        r: {
+          min: 0,
+          max: 5,
+        },
+      },
+    };
+
+    const timeSeriesData = {
+      labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+      datasets: [
+        {
+          label: 'Growth Progression',
+          data: [1.2, 1.8, 2.3, 2.9, 3.2, 3.8],
+          borderColor: 'rgb(59, 130, 246)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          fill: true,
+        },
+      ],
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold">Case Comparison</h3>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Images Comparison */}
+              <div className="space-y-4">
+                <div className="aspect-square relative rounded-lg overflow-hidden border border-gray-200">
+                  <img
+                    src={selectedImage || ''}
+                    alt="Current case"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
+                    Current Case
+                  </div>
+                </div>
+                <div className="aspect-square relative rounded-lg overflow-hidden border border-gray-200">
+                  <img
+                    src={CASE_STUDIES[currentCaseStudyIndex].image}
+                    alt="Similar case"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
+                    Similar Case
+                  </div>
+                </div>
+              </div>
+
+              {/* Metrics and Analysis */}
+              <div className="space-y-6">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <Brain className="w-5 h-5 text-blue-600" />
+                    Diagnosis
+                  </h4>
+                  <p className="text-gray-700">{CASE_STUDIES[currentCaseStudyIndex].diagnosis}</p>
+                  <div className="mt-2">
+                    <div className="text-sm text-gray-600">Similarity Score</div>
+                    <div className="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                        style={{ width: `${CASE_STUDIES[currentCaseStudyIndex].similarity}%` }}
+                      ></div>
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      {CASE_STUDIES[currentCaseStudyIndex].similarity}% match
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-4 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-blue-600" />
+                    Metrics Comparison
+                  </h4>
+                  <div className="h-64">
+                    <Line options={options} data={metrics} />
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-4 flex items-center gap-2">
+                    <LineChart className="w-5 h-5 text-blue-600" />
+                    Growth Progression
+                  </h4>
+                  <div className="h-48">
+                    <Line 
+                      options={{
+                        responsive: true,
+                        plugins: {
+                          legend: {
+                            position: 'top' as const,
+                          },
+                        },
+                      }} 
+                      data={timeSeriesData}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-between">
+              <button
+                onClick={previousCaseStudy}
+                disabled={currentCaseStudyIndex === 0}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                  currentCaseStudyIndex === 0 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                }`}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Previous Case
+              </button>
+              <button
+                onClick={nextCaseStudy}
+                disabled={currentCaseStudyIndex === CASE_STUDIES.length - 1}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                  currentCaseStudyIndex === CASE_STUDIES.length - 1
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                }`}
+              >
+                Next Case
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -130,7 +350,7 @@ export default function Demo() {
     setIsDragging(false);
   };
 
-  const handleImageSelect = (image: typeof sampleImages[0]) => {
+  const handleImageSelect = (image: typeof SAMPLE_IMAGES[0]) => {
     setSelectedImage(image.thumbnail);
     setShowSegmentation(false);
     setTimeout(() => setShowSegmentation(true), 1000);
@@ -260,60 +480,54 @@ export default function Demo() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           <div className="space-y-8">
+            <div className="grid grid-cols-3 gap-6">
+              {SAMPLE_IMAGES.map((image) => (
+                <button
+                  key={image.id}
+                  onClick={() => handleImageSelect(image)}
+                  className="group relative aspect-square bg-gray-100 rounded-lg overflow-hidden transition-transform hover:scale-105 hover:shadow-md"
+                >
+                  {image.thumbnail ? (
+                    <>
+                      <img
+                        src={image.thumbnail}
+                        alt={image.type}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Plus className="w-8 h-8 text-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <ImageIcon className="w-6 h-6 text-gray-500" />
+                  )}
+                </button>
+              ))}
+            </div>
+            
             <div
-              className={`group border-4 border-dashed rounded-xl h-80 flex items-center justify-center transition-all duration-300 ${
+              className={`group border-2 border-dashed rounded-lg p-6 flex items-center justify-center transition-all duration-300 ${
                 isDragging ? 'border-blue-500 bg-blue-50 scale-102' : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
               }`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
-              <label className="w-full h-full flex items-center justify-center cursor-pointer">
+              <label className="w-full flex items-center justify-center cursor-pointer">
                 <input
                   type="file"
                   className="hidden"
                   accept="image/*"
                   onChange={handleFileSelect}
                 />
-                <div className="text-center p-6 transform transition-transform group-hover:scale-105">
-                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4 transition-colors group-hover:text-blue-500" />
-                  <p className="text-gray-600 group-hover:text-gray-900 transition-colors">
+                <div className="text-center transform transition-transform group-hover:scale-105">
+                  <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2 transition-colors group-hover:text-blue-500" />
+                  <p className="text-gray-600 group-hover:text-gray-900 transition-colors text-sm">
                     Drag and drop your medical image here or{' '}
                     <span className="text-blue-600 hover:text-blue-700">browse files</span>
                   </p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Supports DICOM, JPEG, PNG formats
-                  </p>
                 </div>
               </label>
-            </div>
-            
-            <div className="bg-white p-8 rounded-xl shadow-lg">
-              <h3 className="font-semibold mb-6 text-lg">Sample Images</h3>
-              <div className="grid grid-cols-3 gap-6">
-                {sampleImages.map((image) => (
-                  <button
-                    key={image.id}
-                    onClick={() => handleImageSelect(image)}
-                    className="group relative aspect-square bg-gray-100 rounded-lg overflow-hidden transition-transform hover:scale-105 hover:shadow-md"
-                  >
-                    {image.thumbnail ? (
-                      <>
-                        <img
-                          src={image.thumbnail}
-                          alt={image.type}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Plus className="w-8 h-8 text-white" />
-                        </div>
-                      </>
-                    ) : (
-                      <ImageIcon className="w-6 h-6 text-gray-500" />
-                    )}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
 
@@ -335,11 +549,12 @@ export default function Demo() {
                       onClick={() => setShowComparison(prev => !prev)}
                       className="px-4 py-2 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm"
                     >
-                      {showComparison ? 'Hide' : 'Show'} Similar Cases
+                      Compare Cases
                     </button>
                   )}
                 </div>
               </div>
+              
               <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
                 {selectedImage ? (
                   <div className="relative w-full h-full">
@@ -422,6 +637,7 @@ export default function Demo() {
                   </div>
                 )}
               </div>
+
               {selectedImage && showSegmentation && (
                 <div className="mt-6">
                   <h4 className="font-medium mb-2">Detected Regions:</h4>
@@ -485,68 +701,13 @@ export default function Demo() {
                 </div>
               )}
             </div>
-
-            {showComparison && selectedImage && showSegmentation && (
-              <div className="bg-white p-8 rounded-xl shadow-lg">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="font-semibold text-lg">Similar Cases</h3>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={previousCaseStudy}
-                      disabled={currentCaseStudyIndex === 0}
-                      className={`p-2 rounded-lg ${
-                        currentCaseStudyIndex === 0 
-                          ? 'text-gray-400 cursor-not-allowed' 
-                          : 'text-blue-600 hover:bg-blue-50'
-                      }`}
-                    >
-                      <ArrowLeft className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={nextCaseStudy}
-                      disabled={currentCaseStudyIndex === CASE_STUDIES.length - 1}
-                      className={`p-2 rounded-lg ${
-                        currentCaseStudyIndex === CASE_STUDIES.length - 1
-                          ? 'text-gray-400 cursor-not-allowed'
-                          : 'text-blue-600 hover:bg-blue-50'
-                      }`}
-                    >
-                      <ArrowRight className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <img
-                      src={CASE_STUDIES[currentCaseStudyIndex].image}
-                      alt="Similar case"
-                      className="w-full aspect-square object-cover rounded-lg"
-                    />
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium">Diagnosis</h4>
-                      <p className="text-gray-600">{CASE_STUDIES[currentCaseStudyIndex].diagnosis}</p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Similarity Score</h4>
-                      <div className="mt-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-600 rounded-full transition-all duration-500"
-                          style={{ width: `${CASE_STUDIES[currentCaseStudyIndex].similarity}%` }}
-                        ></div>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {CASE_STUDIES[currentCaseStudyIndex].similarity}% match
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
+
+      {showComparison && (
+        <ComparisonModal onClose={() => setShowComparison(false)} />
+      )}
     </section>
   );
 }
