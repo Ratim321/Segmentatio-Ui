@@ -27,19 +27,45 @@ export default function Research() {
   ];
 
   return (
-    <section className="py-24 bg-white" id="research">
+    <section 
+      className="
+        py-24 
+        bg-white 
+        dark:bg-gray-900 
+        text-gray-900 
+        dark:text-gray-100 
+        transition-colors
+      " 
+      id="research"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-4xl font-bold text-center mb-16">Research & Publications</h2>
+        <h2 className="text-4xl font-bold text-center mb-16">
+          Research &amp; Publications
+        </h2>
         
         <div className="grid gap-8">
           {papers.map((paper, index) => (
-            <div key={index} className="bg-gray-50 p-6 rounded-xl hover:shadow-lg transition-shadow">
+            <div 
+              key={index} 
+              className="
+                bg-gray-50 
+                dark:bg-gray-800 
+                p-6 
+                rounded-xl 
+                hover:shadow-lg 
+                transition-shadow
+              "
+            >
               <div className="flex items-start gap-6">
                 <FileText className="w-8 h-8 text-blue-600 flex-shrink-0" />
                 <div>
-                  <h3 className="text-xl font-semibold mb-2">{paper.title}</h3>
-                  <p className="text-gray-600 mb-4">{paper.authors}</p>
-                  <div className="flex items-center gap-6 text-sm text-gray-500">
+                  <h3 className="text-xl font-semibold mb-2">
+                    {paper.title}
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-300 mb-4">
+                    {paper.authors}
+                  </p>
+                  <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
                     <span className="flex items-center gap-2">
                       <BookOpen className="w-4 h-4" />
                       {paper.journal}
