@@ -1,30 +1,32 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Hero from './components/Hero';
 import Demo from './components/Demo';
 import Research from './components/Research';
 import Testimonials from './components/Testimonials';
 
 function App() {
-  // Local state to track if dark mode is enabled
-  const [darkMode, setDarkMode] = React.useState(false);
+  // Get initial dark mode preference from localStorage or system preference
+  const [darkMode, setDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      return savedTheme === 'dark';
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
 
-  // Whenever `darkMode` changes, add/remove the "dark" class on <html>
-  React.useEffect(() => {
+  // Update dark mode class and localStorage whenever darkMode changes
+  useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   }, [darkMode]);
 
   return (
     <>
-      {/* 
-        1) Add dark mode variants here:
-           - "bg-white dark:bg-gray-900" for background color in dark mode
-           - "text-gray-900 dark:text-gray-100" for text color in dark mode
-           - "transition-colors" for smooth color transitions
-      */}
       <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
         <nav className="fixed w-full bg-white/80 dark:bg-gray-800/60 backdrop-blur-md z-50 shadow-sm transition-colors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -81,7 +83,7 @@ function App() {
 
         <main className="pt-16">
           <Hero />
-          <Demo />
+          <Demo darkMode={darkMode} onDarkModeChange={setDarkMode} />
           <Research />
           <Testimonials />
         </main>

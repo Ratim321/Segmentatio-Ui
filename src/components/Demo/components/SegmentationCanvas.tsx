@@ -42,127 +42,127 @@ export function SegmentationCanvas({
   onZoomOut,
   onZoomReset,
 }: SegmentationCanvasProps) {
-  if (!selectedImage) {
-    return (
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
-        <ImageIcon className="w-10 h-10" />
-        <p className="mt-2">No image selected</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="relative w-full h-full group">
-      <img
-        src={selectedImage}
-        alt="Selected medical image"
-        className="w-full h-full object-cover transition-transform duration-200"
-        style={{ transform: `scale(${zoomLevel})` }}
-      />
-      {showSegmentation && (
+    <div className="relative w-full aspect-square bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden group">
+      {selectedImage ? (
         <>
-          <div className="absolute inset-0">
-            <svg
-              ref={svgRef}
-              className="w-full h-full cursor-crosshair transition-transform duration-200"
-              onMouseMove={onMouseMove}
-              onMouseUp={onMouseUp}
-              onMouseLeave={onMouseLeave}
-              onClick={onClick}
-              style={{ transform: `scale(${zoomLevel})` }}
-            >
-              {polygons.map((polygon) => (
-                <g
-                  key={polygon.id}
-                  className={`
-                    animate-draw 
-                    transition-transform 
-                    duration-200 
-                    ${hoveredPolygon === polygon.id ? "scale-105" : "scale-100"}
-                  `}
-                  onMouseEnter={() => onHoverPolygon(polygon.id)}
-                  onMouseLeave={() => onHoverPolygon(null)}
+          <img
+            src={selectedImage}
+            alt="Selected medical image"
+            className="w-full h-full object-cover transition-transform duration-200"
+            style={{ transform: `scale(${zoomLevel})` }}
+          />
+          {showSegmentation && (
+            <>
+              <div className="absolute inset-0">
+                <svg
+                  ref={svgRef}
+                  className="w-full h-full cursor-crosshair transition-transform duration-200"
+                  onMouseMove={onMouseMove}
+                  onMouseUp={onMouseUp}
+                  onMouseLeave={onMouseLeave}
+                  onClick={onClick}
+                  style={{ transform: `scale(${zoomLevel})` }}
                 >
-                  <polygon
-                    points={polygon.points.map((p) => `${p.x},${p.y}`).join(" ")}
-                    className={`
-                      ${COLORS[parseInt(polygon.color)].fill} 
-                      ${COLORS[parseInt(polygon.color)].stroke} 
-                      stroke-2 
-                      transition-opacity
-                      ${hoveredPolygon === polygon.id ? "opacity-80" : "opacity-50"}
-                    `}
-                  />
-                  {polygon.points.map((point, index) => (
-                    <circle
-                      key={index}
-                      cx={point.x}
-                      cy={point.y}
-                      r="6"
+                  {polygons.map((polygon) => (
+                    <g
+                      key={polygon.id}
                       className={`
-                        fill-white 
-                        ${COLORS[parseInt(polygon.color)].stroke} 
-                        stroke-2 
-                        cursor-move 
-                        hover:fill-blue-100
+                        animate-draw 
+                        transition-transform 
+                        duration-200 
+                        ${hoveredPolygon === polygon.id ? "scale-105" : "scale-100"}
                       `}
-                      onMouseDown={onPointMouseDown(polygon.id, index)}
-                    />
+                      onMouseEnter={() => onHoverPolygon(polygon.id)}
+                      onMouseLeave={() => onHoverPolygon(null)}
+                    >
+                      <polygon
+                        points={polygon.points.map((p) => `${p.x},${p.y}`).join(" ")}
+                        className={`
+                          ${COLORS[parseInt(polygon.color)].fill} 
+                          ${COLORS[parseInt(polygon.color)].stroke} 
+                          stroke-2 
+                          transition-opacity
+                          ${hoveredPolygon === polygon.id ? "opacity-80" : "opacity-50"}
+                        `}
+                      />
+                      {polygon.points.map((point, index) => (
+                        <circle
+                          key={index}
+                          cx={point.x}
+                          cy={point.y}
+                          r="6"
+                          className={`
+                            fill-white 
+                            ${COLORS[parseInt(polygon.color)].stroke} 
+                            stroke-2 
+                            cursor-move 
+                            hover:fill-blue-100
+                          `}
+                          onMouseDown={onPointMouseDown(polygon.id, index)}
+                        />
+                      ))}
+                      {hoveredPolygon === polygon.id && polygon.details && (
+                        <foreignObject x={polygon.points[0].x} y={polygon.points[0].y - 40} width="200" height="35">
+                          <div className="bg-white dark:bg-gray-800 dark:text-gray-100/90 backdrop-blur-sm p-2 rounded-lg shadow-lg text-sm">
+                            {polygon.details}
+                          </div>
+                        </foreignObject>
+                      )}
+                    </g>
                   ))}
-                  {hoveredPolygon === polygon.id && polygon.details && (
-                    <foreignObject x={polygon.points[0].x} y={polygon.points[0].y - 40} width="200" height="35">
-                      <div className="bg-white dark:bg-gray-800 dark:text-gray-100/90 backdrop-blur-sm p-2 rounded-lg shadow-lg text-sm">
-                        {polygon.details}
-                      </div>
-                    </foreignObject>
+
+                  {isDrawing && tempPoints.length > 0 && (
+                    <g className="animate-draw">
+                      <polyline
+                        points={tempPoints.map((p) => `${p.x},${p.y}`).join(" ")}
+                        className="fill-none stroke-blue-600 stroke-2 stroke-dashed"
+                      />
+                      {tempPoints.map((point, index) => (
+                        <circle
+                          key={index}
+                          cx={point.x}
+                          cy={point.y}
+                          r="4"
+                          className="fill-white stroke-blue-600 stroke-2"
+                        />
+                      ))}
+                    </g>
                   )}
-                </g>
-              ))}
+                </svg>
+              </div>
 
-              {isDrawing && tempPoints.length > 0 && (
-                <g className="animate-draw">
-                  <polyline
-                    points={tempPoints.map((p) => `${p.x},${p.y}`).join(" ")}
-                    className="fill-none stroke-blue-600 stroke-2 stroke-dashed"
-                  />
-                  {tempPoints.map((point, index) => (
-                    <circle
-                      key={index}
-                      cx={point.x}
-                      cy={point.y}
-                      r="4"
-                      className="fill-white stroke-blue-600 stroke-2"
-                    />
-                  ))}
-                </g>
-              )}
-            </svg>
-          </div>
-
-          <div className="absolute bottom-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={onZoomOut}
-              className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors"
-              title="Zoom Out"
-            >
-              <MinusCircle className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-            </button>
-            <button
-              onClick={onZoomIn}
-              className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors"
-              title="Zoom In"
-            >
-              <PlusCircle className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-            </button>
-            <button
-              onClick={onZoomReset}
-              className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors"
-              title="Reset Zoom"
-            >
-              <Maximize2 className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-            </button>
-          </div>
+              <div className="absolute bottom-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={onZoomOut}
+                  className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors"
+                  title="Zoom Out"
+                >
+                  <MinusCircle className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+                </button>
+                <button
+                  onClick={onZoomIn}
+                  className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors"
+                  title="Zoom In"
+                >
+                  <PlusCircle className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+                </button>
+                <button
+                  onClick={onZoomReset}
+                  className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors"
+                  title="Reset Zoom"
+                >
+                  <Maximize2 className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+                </button>
+              </div>
+            </>
+          )}
         </>
+      ) : (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
+          <ImageIcon className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-2" />
+          <p className="text-gray-500 dark:text-gray-400 text-sm">No image selected</p>
+        </div>
       )}
     </div>
   );

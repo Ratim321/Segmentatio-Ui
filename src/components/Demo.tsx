@@ -14,8 +14,12 @@ import { SAMPLE_IMAGES, CASE_STUDIES } from "./Demo/utils/constants";
 import { generateRandomPolygons } from "./Demo/utils/helpers";
 import { Report } from './Demo/components/Report';
 
-export default function Demo() {
-  const [darkMode, setDarkMode] = useState(false);
+interface DemoProps {
+  darkMode: boolean;
+  onDarkModeChange: (darkMode: boolean) => void;
+}
+
+export default function Demo({ darkMode, onDarkModeChange }: DemoProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showSegmentation, setShowSegmentation] = useState(false);
@@ -44,14 +48,6 @@ export default function Demo() {
     updatePolygon,
     addPolygon,
   } = usePolygon();
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [darkMode]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -168,7 +164,7 @@ export default function Demo() {
   return (
     <section className="py-24 bg-gray-50 dark:bg-gray-900 transition-colors" id="demo">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <DarkModeToggle darkMode={darkMode} onToggle={() => setDarkMode(!darkMode)} />
+        <DarkModeToggle darkMode={darkMode} onToggle={onDarkModeChange} />
 
         <h2 className="text-4xl font-bold text-center mb-4 text-gray-900 dark:text-gray-100">
           Interactive Demo
@@ -233,7 +229,6 @@ export default function Demo() {
                 onZoomReset={() => setZoomLevel(1)}
               />
 
-              // Inside the Demo component, update the rendering of SegmentationList:
               {showSegmentation && polygons.length > 0 && (
                 <div className="grid grid-cols-2 gap-6">
                   <SegmentationList
@@ -249,7 +244,7 @@ export default function Demo() {
                       {
                         name: "Calcification in Pineal Gland",
                         confidence: 92.0,
-                        colorIndex: 1, // Using red color from COLORS array
+                        colorIndex: 1,
                         details: "Physiological calcification observed in pineal gland and posterior horn of both sided lateral ventricles.",
                         references: [{
                           title: "Pineal Gland Calcification Patterns",
@@ -259,7 +254,7 @@ export default function Demo() {
                       {
                         name: "Normal Brain Structure",
                         confidence: 95.0,
-                        colorIndex: 2, // Using green color from COLORS array
+                        colorIndex: 2,
                         details: "All brain structures appear normal with no significant abnormalities detected."
                       }
                     ]}

@@ -1,7 +1,32 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Brain, Activity, LineChart, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  RadialLinearScale,
+  Filler
+} from 'chart.js';
 import { CaseStudy } from '../types';
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  RadialLinearScale,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 interface ComparisonModalProps {
   onClose: () => void;
@@ -20,6 +45,16 @@ export function ComparisonModal({
   onPrevious,
   onNext,
 }: ComparisonModalProps) {
+  // Cleanup chart instances on unmount
+  useEffect(() => {
+    return () => {
+      const charts = ChartJS.instances;
+      Object.keys(charts).forEach(key => {
+        charts[key].destroy();
+      });
+    };
+  }, []);
+
   const metrics = {
     labels: ["Volume", "Density", "Growth Rate", "Infiltration"],
     datasets: [
@@ -175,12 +210,26 @@ function MetricsSection({ diagnosis, similarity, metrics, timeSeriesData }: Metr
       },
     },
     scales: {
-      r: {
-        min: 0,
+      y: {
+        beginAtZero: true,
         max: 5,
         ticks: {
           stepSize: 1,
         },
+      },
+    },
+  };
+
+  const timeSeriesOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top" as const,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
       },
     },
   };
@@ -234,22 +283,7 @@ function MetricsSection({ diagnosis, similarity, metrics, timeSeriesData }: Metr
         </h4>
         <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm">
           <div className="h-48">
-            <Line
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: {
-                    position: "top" as const,
-                  },
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                  },
-                },
-              }}
-              data={timeSeriesData}
-            />
+            <Line options={timeSeriesOptions} data={timeSeriesData} />
           </div>
         </div>
       </div>
