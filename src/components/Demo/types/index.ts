@@ -3,12 +3,19 @@ export interface Point {
   y: number;
 }
 
+export interface Reference {
+  title: string;
+  source: string;
+}
+
 export interface Polygon {
   id: string;
   points: Point[];
   color: string;
   name: string;
   details?: string;
+  confidence?: number;
+  references?: Reference[];
 }
 
 export interface CaseStudy {

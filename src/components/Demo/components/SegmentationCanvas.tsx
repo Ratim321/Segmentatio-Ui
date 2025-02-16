@@ -43,13 +43,13 @@ export function SegmentationCanvas({
   onZoomReset,
 }: SegmentationCanvasProps) {
   return (
-    <div className="relative w-full aspect-square bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden group">
+    <div className="relative w-full h-[80vh] aspect-square bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden group">
       {selectedImage ? (
         <>
           <img
             src={selectedImage}
             alt="Selected medical image"
-            className="w-full h-full object-cover transition-transform duration-200"
+            className="w-full h-full object-contain transition-transform duration-200"
             style={{ transform: `scale(${zoomLevel})` }}
           />
           {showSegmentation && (
