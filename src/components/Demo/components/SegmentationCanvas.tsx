@@ -49,7 +49,7 @@ export function SegmentationCanvas({
           <img
             src={selectedImage}
             alt="Selected medical image"
-            className="w-full h-full object-contain transition-transform duration-200"
+            className="w-full h-full object-cover transition-transform duration-200"
             style={{ transform: `scale(${zoomLevel})` }}
           />
           {showSegmentation && (
@@ -103,8 +103,27 @@ export function SegmentationCanvas({
                         />
                       ))}
                       {hoveredPolygon === polygon.id && polygon.details && (
-                        <foreignObject x={polygon.points[0].x} y={polygon.points[0].y - 40} width="200" height="35">
-                          <div className="bg-white dark:bg-gray-800 dark:text-gray-100/90 backdrop-blur-sm p-2 rounded-lg shadow-lg text-sm">
+                        <foreignObject 
+                          x={polygon.points[0].x} 
+                          y={polygon.points[0].y - 40} 
+                          width="200" 
+                          height="1000"
+                          className="overflow-visible "
+                        >
+                          <div 
+                            className="
+                              bg-white/90 dark:bg-gray-800/90 
+                              dark:text-gray-100/90 
+                              backdrop-blur-sm 
+                              p-3 
+                              rounded-lg 
+                              shadow-lg 
+                              text-sm
+                              max-w-[200px]
+                              whitespace-pre-wrap
+                              break-words
+                            "
+                          >
                             {polygon.details}
                           </div>
                         </foreignObject>

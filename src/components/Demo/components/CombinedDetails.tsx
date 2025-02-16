@@ -218,18 +218,36 @@ export function CombinedDetails({
                       </div>
                     </div>
                     {isExpanded && (
-                      <div className="mt-3 space-y-3">
-                        <p className="text-sm text-gray-600 dark:text-gray-300">{polygon.details}</p>
-                        {polygon.references && polygon.references.length > 0 && (
-                          <div className="text-xs text-gray-500">
-                            <p className="font-medium mb-1">References:</p>
-                            {polygon.references.map((ref, idx) => (
-                              <p key={idx}>
-                                {ref.title} ({ref.source})
-                              </p>
-                            ))}
+                      <div className="mt-3">
+                        <div 
+                          className="
+                            relative
+                            text-sm text-gray-600 dark:text-gray-300 
+                            bg-white/90 dark:bg-gray-800/90 
+                            backdrop-blur-lg 
+                            border border-gray-200/50 dark:border-gray-700/50
+                            shadow-lg 
+                            rounded-xl 
+                            p-4
+                            w-full
+                            whitespace-pre-wrap
+                            break-words
+                          "
+                        >
+                          <div className="space-y-3">
+                            <p className="leading-relaxed">{polygon.details}</p>
+                            {polygon.references && polygon.references.length > 0 && (
+                              <div className="text-xs text-gray-500 border-t border-gray-200/50 dark:border-gray-700/50 pt-3 mt-3">
+                                <p className="font-medium mb-2">References:</p>
+                                {polygon.references.map((ref, idx) => (
+                                  <p key={idx} className="mb-1.5">
+                                    {ref.title} ({ref.source})
+                                  </p>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
                     )}
                   </div>
