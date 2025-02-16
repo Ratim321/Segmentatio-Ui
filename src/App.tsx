@@ -3,6 +3,7 @@ import Hero from './components/Hero';
 import Demo from './components/Demo';
 import Research from './components/Research';
 import Testimonials from './components/Testimonials';
+import { Sun, Moon } from 'lucide-react';
 
 function App() {
   // Get initial dark mode preference from localStorage or system preference
@@ -62,11 +63,25 @@ function App() {
                 {/* Dark Mode Toggle Button */}
                 <button
                   onClick={() => setDarkMode(!darkMode)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-700 
-                             rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 
-                             hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="p-2 rounded-lg border border-gray-300 dark:border-gray-700
+                           hover:bg-gray-100 dark:hover:bg-gray-700 
+                           transition-all duration-300 ease-in-out
+                           relative overflow-hidden group"
+                  aria-label="Toggle theme"
                 >
-                  {darkMode ? 'Light Mode' : 'Dark Mode'}
+                  <div className="relative w-6 h-6">
+                    <Sun 
+                      className={`w-6 h-6 text-yellow-500 absolute 
+                        transition-all duration-300 ease-in-out
+                        ${darkMode ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100'}`}
+                    />
+                    <Moon 
+                      className={`w-6 h-6 text-blue-400 absolute 
+                        transition-all duration-300 ease-in-out
+                        ${darkMode ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0'}`}
+                    />
+                  </div>
+                  
                 </button>
 
                 {/* Get Started Button */}
