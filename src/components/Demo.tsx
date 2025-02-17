@@ -150,7 +150,6 @@ export default function Demo({ darkMode, onDarkModeChange }: DemoProps) {
     <div className="container mx-auto px-4 py-8">
       <section className="py-24 bg-gray-50 dark:bg-gray-900 transition-colors" id="demo">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
           <h2 className="text-4xl font-bold text-center mb-4 text-gray-900 dark:text-gray-100">Interactive Demo</h2>
           <p className="text-gray-600 dark:text-gray-300 text-center mb-16 max-w-2xl mx-auto">Experience our advanced medical image segmentation tool. Upload your images or try our samples to see AI-powered analysis in action.</p>
 
@@ -188,13 +187,7 @@ export default function Demo({ darkMode, onDarkModeChange }: DemoProps) {
 
                 {showSegmentation && polygons.length > 0 && (
                   <div className="mt-6">
-                    <CombinedDetails
-                      polygons={polygons}
-                      editingPolygon={editingPolygon}
-                      onEdit={setEditingPolygon}
-                      onDelete={deletePolygon}
-                      onUpdate={updatePolygon}
-                    />
+                    <CombinedDetails polygons={polygons} editingPolygon={editingPolygon} onEdit={setEditingPolygon} onDelete={deletePolygon} onUpdate={updatePolygon} />
                   </div>
                 )}
               </div>

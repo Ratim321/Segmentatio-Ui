@@ -4,6 +4,9 @@ import Demo from './components/Demo';
 import Research from './components/Research';
 import Testimonials from './components/Testimonials';
 import { Sun, Moon } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import DemoPage from './pages/DemoPage';
+import Layout from './components/Layout';
 
 function App() {
   // Get initial dark mode preference from localStorage or system preference
@@ -27,123 +30,20 @@ function App() {
   }, [darkMode]);
 
   return (
-    <>
-      <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
-        <nav className="fixed w-full bg-white/80 dark:bg-gray-800/60 backdrop-blur-md z-50 shadow-sm transition-colors">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              {/* Left: Logo */}
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                  MedSegAI
-                </span>
-              </div>
-
-              {/* Right: Navigation Links + Dark Mode Toggle + CTA */}
-              <div className="hidden md:flex items-center gap-8">
-                <a 
-                  href="#demo" 
-                  className="text-gray-600 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                >
-                  Demo
-                </a>
-                <a 
-                  href="#research" 
-                  className="text-gray-600 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                >
-                  Research
-                </a>
-                <a 
-                  href="#testimonials" 
-                  className="text-gray-600 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                >
-                  Testimonials
-                </a>
-
-                {/* Dark Mode Toggle Button */}
-                <button
-                  onClick={() => setDarkMode(!darkMode)}
-                  className="p-2 rounded-lg border border-gray-300 dark:border-gray-700
-                           hover:bg-gray-100 dark:hover:bg-gray-700 
-                           transition-all duration-300 ease-in-out
-                           relative overflow-hidden group"
-                  aria-label="Toggle theme"
-                >
-                  <div className="relative w-6 h-6">
-                    <Sun 
-                      className={`w-6 h-6 text-yellow-500 absolute 
-                        transition-all duration-300 ease-in-out
-                        ${darkMode ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100'}`}
-                    />
-                    <Moon 
-                      className={`w-6 h-6 text-blue-400 absolute 
-                        transition-all duration-300 ease-in-out
-                        ${darkMode ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0'}`}
-                    />
-                  </div>
-                  
-                </button>
-
-                {/* Get Started Button */}
-                <button 
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 
-                             text-white rounded-lg transition-colors text-sm font-medium"
-                >
-                  Get Started
-                </button>
-              </div>
-            </div>
-          </div>
-        </nav>
-
-        <main className="pt-16">
-          <Hero />
-          <Demo darkMode={darkMode} onDarkModeChange={setDarkMode} />
-          <Research />
-          <Testimonials />
-        </main>
-
-        <footer className="bg-gray-900 dark:bg-gray-800 text-white py-12 transition-colors">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              <div>
-                <h3 className="text-lg font-semibold mb-4">MedSegAI</h3>
-                <p className="text-gray-400">
-                  Advanced medical image segmentation powered by artificial intelligence.
-                </p>
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold mb-4">Product</h4>
-                <ul className="space-y-2 text-gray-400">
-                  <li><a href="#" className="hover:text-white">Features</a></li>
-                  <li><a href="#" className="hover:text-white">Pricing</a></li>
-                  <li><a href="#" className="hover:text-white">Case Studies</a></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold mb-4">Resources</h4>
-                <ul className="space-y-2 text-gray-400">
-                  <li><a href="#" className="hover:text-white">Documentation</a></li>
-                  <li><a href="#" className="hover:text-white">API Reference</a></li>
-                  <li><a href="#" className="hover:text-white">Support</a></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold mb-4">Company</h4>
-                <ul className="space-y-2 text-gray-400">
-                  <li><a href="#" className="hover:text-white">About</a></li>
-                  <li><a href="#" className="hover:text-white">Blog</a></li>
-                  <li><a href="#" className="hover:text-white">Contact</a></li>
-                </ul>
-              </div>
-            </div>
-            <div className="mt-12 pt-8 border-t border-gray-800 text-center text-gray-400">
-              <p>&copy; 2024 MedSegAI. All rights reserved.</p>
-            </div>
-          </div>
-        </footer>
-      </div>
-    </>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Layout darkMode={darkMode} setDarkMode={setDarkMode} />}>
+          <Route index element={
+            <>
+              <Hero />
+              <Research />
+              <Testimonials />
+            </>
+          } />
+          <Route path="/demo" element={<DemoPage />} />
+        </Route>
+      </Routes>
+    </Router>
   );
 }
 

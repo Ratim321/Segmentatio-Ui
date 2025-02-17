@@ -1,7 +1,7 @@
-import React from 'react';
-import { MinusCircle, PlusCircle, Maximize2, ImageIcon } from 'lucide-react';
-import { Point, Polygon } from '../types';
-import { COLORS } from '../utils/helpers';
+import React from "react";
+import { MinusCircle, PlusCircle, Maximize2, ImageIcon } from "lucide-react";
+import { Point, Polygon } from "../types";
+import { COLORS } from "../utils/helpers";
 
 interface SegmentationCanvasProps {
   selectedImage: string | null;
@@ -23,47 +23,16 @@ interface SegmentationCanvasProps {
   onZoomReset: () => void;
 }
 
-export function SegmentationCanvas({
-  selectedImage,
-  showSegmentation,
-  polygons,
-  isDrawing,
-  tempPoints,
-  hoveredPolygon,
-  zoomLevel,
-  svgRef,
-  onMouseMove,
-  onMouseUp,
-  onMouseLeave,
-  onClick,
-  onPointMouseDown,
-  onHoverPolygon,
-  onZoomIn,
-  onZoomOut,
-  onZoomReset,
-}: SegmentationCanvasProps) {
+export function SegmentationCanvas({ selectedImage, showSegmentation, polygons, isDrawing, tempPoints, hoveredPolygon, zoomLevel, svgRef, onMouseMove, onMouseUp, onMouseLeave, onClick, onPointMouseDown, onHoverPolygon, onZoomIn, onZoomOut, onZoomReset }: SegmentationCanvasProps) {
   return (
     <div className="relative w-full h-[80vh] aspect-square bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden group">
       {selectedImage ? (
         <>
-          <img
-            src={selectedImage}
-            alt="Selected medical image"
-            className="w-full h-full object-cover transition-transform duration-200"
-            style={{ transform: `scale(${zoomLevel})` }}
-          />
+          <img src={selectedImage} alt="Selected medical image" className="w-full h-full object-cover transition-transform duration-200" style={{ transform: `scale(${zoomLevel})` }} />
           {showSegmentation && (
             <>
               <div className="absolute inset-0">
-                <svg
-                  ref={svgRef}
-                  className="w-full h-full cursor-crosshair transition-transform duration-200"
-                  onMouseMove={onMouseMove}
-                  onMouseUp={onMouseUp}
-                  onMouseLeave={onMouseLeave}
-                  onClick={onClick}
-                  style={{ transform: `scale(${zoomLevel})` }}
-                >
+                <svg ref={svgRef} className="w-full h-full cursor-crosshair transition-transform duration-200" onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseLeave} onClick={onClick} style={{ transform: `scale(${zoomLevel})` }}>
                   {polygons.map((polygon) => (
                     <g
                       key={polygon.id}
@@ -71,7 +40,7 @@ export function SegmentationCanvas({
                         animate-draw 
                         transition-transform 
                         duration-200 
-                        ${hoveredPolygon === polygon.id ? "scale-105" : "scale-100"}
+                        
                       `}
                       onMouseEnter={() => onHoverPolygon(polygon.id)}
                       onMouseLeave={() => onHoverPolygon(null)}
@@ -103,26 +72,23 @@ export function SegmentationCanvas({
                         />
                       ))}
                       {hoveredPolygon === polygon.id && polygon.details && (
-                        <foreignObject 
-                          x={polygon.points[0].x} 
-                          y={polygon.points[0].y - 40} 
-                          width="200" 
-                          height="1000"
-                          className="overflow-visible "
-                        >
-                          <div 
-                            className="
-                              bg-white/90 dark:bg-gray-800/90 
+                        <foreignObject x={polygon.points[0].x} y={polygon.points[0].y - 40} width="200" height="1000" className="overflow-visible">
+                          <div
+                            style={{ borderColor: `var(--${COLORS[parseInt(polygon.color)].name.toLowerCase()}-color)` ,background: `var(--${COLORS[parseInt(polygon.color)].name.toLowerCase()}-color)/50` }}
+                            className={`
+                              bg-white/30 dark:bg-gray-800/90 
                               dark:text-gray-100/90 
-                              backdrop-blur-sm 
+                              text-white
+                              backdrop-blur-xl
                               p-3 
                               rounded-lg 
+                              border
                               shadow-lg 
                               text-sm
                               max-w-[200px]
                               whitespace-pre-wrap
                               break-words
-                            "
+                            `}
                           >
                             {polygon.details}
                           </div>
@@ -133,18 +99,9 @@ export function SegmentationCanvas({
 
                   {isDrawing && tempPoints.length > 0 && (
                     <g className="animate-draw">
-                      <polyline
-                        points={tempPoints.map((p) => `${p.x},${p.y}`).join(" ")}
-                        className="fill-none stroke-blue-600 stroke-2 stroke-dashed"
-                      />
+                      <polyline points={tempPoints.map((p) => `${p.x},${p.y}`).join(" ")} className="fill-none stroke-blue-600 stroke-2 stroke-dashed" />
                       {tempPoints.map((point, index) => (
-                        <circle
-                          key={index}
-                          cx={point.x}
-                          cy={point.y}
-                          r="4"
-                          className="fill-white stroke-blue-600 stroke-2"
-                        />
+                        <circle key={index} cx={point.x} cy={point.y} r="4" className="fill-white stroke-blue-600 stroke-2" />
                       ))}
                     </g>
                   )}
@@ -152,25 +109,13 @@ export function SegmentationCanvas({
               </div>
 
               <div className="absolute bottom-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={onZoomOut}
-                  className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors"
-                  title="Zoom Out"
-                >
+                <button onClick={onZoomOut} className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors" title="Zoom Out">
                   <MinusCircle className="w-5 h-5 text-gray-700 dark:text-gray-200" />
                 </button>
-                <button
-                  onClick={onZoomIn}
-                  className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors"
-                  title="Zoom In"
-                >
+                <button onClick={onZoomIn} className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors" title="Zoom In">
                   <PlusCircle className="w-5 h-5 text-gray-700 dark:text-gray-200" />
                 </button>
-                <button
-                  onClick={onZoomReset}
-                  className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors"
-                  title="Reset Zoom"
-                >
+                <button onClick={onZoomReset} className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors" title="Reset Zoom">
                   <Maximize2 className="w-5 h-5 text-gray-700 dark:text-gray-200" />
                 </button>
               </div>

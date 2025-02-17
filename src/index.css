@@ -48,3 +48,11 @@ html {
 body {
   @apply antialiased text-gray-900 bg-gray-50 dark:bg-gray-900 dark:text-gray-100;
 }
+
+:root {
+  --region-color: #3b82f6;
+  --critical-color: #ef4444;
+  --safe-color: #22c55e;
+  --target-color: #a855f7;
+  --review-color: #f97316;
+}
