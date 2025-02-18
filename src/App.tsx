@@ -7,9 +7,9 @@ import { Sun, Moon } from 'lucide-react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import DemoPage from './pages/DemoPage';
 import Layout from './components/Layout';
+import { ImageViewer } from './components/ImageAnalysis/ImageViewer';
 
 function App() {
-  // Get initial dark mode preference from localStorage or system preference
   const [darkMode, setDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
@@ -18,7 +18,6 @@ function App() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
-  // Update dark mode class and localStorage whenever darkMode changes
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -41,6 +40,7 @@ function App() {
             </>
           } />
           <Route path="/demo" element={<DemoPage />} />
+          <Route path="/image-analysis" element={<ImageViewer />} />
         </Route>
       </Routes>
     </Router>

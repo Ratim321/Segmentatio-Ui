@@ -1,18 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Upload, Image as ImageIcon, Plus, Trash2, Edit2, ArrowLeft, ArrowRight, X, LineChart, Activity, Brain, Maximize2, MinusCircle, PlusCircle } from "lucide-react";
-import { Line } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler, registerables } from "chart.js"; // Import registerables
-import { DarkModeToggle } from "./Demo/components/DarkModeToggle";
+import { Chart as ChartJS, registerables } from "chart.js"; // Import registerables
+
 import { ImageUploader } from "./Demo/components/ImageUploader";
 import { SampleImages } from "./Demo/components/SampleImages";
 import { SegmentationCanvas } from "./Demo/components/SegmentationCanvas";
 import { SegmentationControls } from "./Demo/components/SegmentationControls";
-import { SegmentationList } from "./Demo/components/SegmentationList";
+
 import { ComparisonModal } from "./Demo/components/ComparisonModal";
 import { usePolygon } from "./Demo/hooks/usePolygon";
 import { SAMPLE_IMAGES, CASE_STUDIES } from "./Demo/utils/constants";
 import { generateRandomPolygons } from "./Demo/utils/helpers";
-import { Report } from "./Demo/components/Report";
+
 import { CombinedDetails } from "./Demo/components/CombinedDetails";
 
 interface DemoProps {
@@ -168,7 +166,7 @@ export default function Demo({ darkMode, onDarkModeChange }: DemoProps) {
             </div>
 
             <div className="lg:col-span-2">
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm">
+              <div className="bg-white dark:bg-gray-800 p-2 rounded-2xl shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">Image Analysis</h3>
                   <SegmentationControls
@@ -183,13 +181,15 @@ export default function Demo({ darkMode, onDarkModeChange }: DemoProps) {
                   />
                 </div>
 
-                <SegmentationCanvas selectedImage={selectedImage} showSegmentation={showSegmentation} polygons={polygons} isDrawing={isDrawing} tempPoints={tempPoints} hoveredPolygon={hoveredPolygon} zoomLevel={zoomLevel} svgRef={svgRef} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onClick={handleCanvasClick} onPointMouseDown={handlePointMouseDown} onHoverPolygon={setHoveredPolygon} onZoomIn={() => setZoomLevel((prev) => Math.min(2, prev + 0.1))} onZoomOut={() => setZoomLevel((prev) => Math.max(1, prev - 0.1))} onZoomReset={() => setZoomLevel(1)} />
+                <div className="flex">
+                  <SegmentationCanvas selectedImage={selectedImage} showSegmentation={showSegmentation} polygons={polygons} isDrawing={isDrawing} tempPoints={tempPoints} hoveredPolygon={hoveredPolygon} zoomLevel={zoomLevel} svgRef={svgRef} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onClick={handleCanvasClick} onPointMouseDown={handlePointMouseDown} onHoverPolygon={setHoveredPolygon} onZoomIn={() => setZoomLevel((prev) => Math.min(2, prev + 0.1))} onZoomOut={() => setZoomLevel((prev) => Math.max(1, prev - 0.1))} onZoomReset={() => setZoomLevel(1)} />
 
-                {showSegmentation && polygons.length > 0 && (
-                  <div className="mt-6">
-                    <CombinedDetails polygons={polygons} editingPolygon={editingPolygon} onEdit={setEditingPolygon} onDelete={deletePolygon} onUpdate={updatePolygon} />
-                  </div>
-                )}
+                  {showSegmentation && polygons.length > 0 && (
+                    <div className="ml-2">
+                      <CombinedDetails polygons={polygons} editingPolygon={editingPolygon} onEdit={setEditingPolygon} onDelete={deletePolygon} onUpdate={updatePolygon} />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

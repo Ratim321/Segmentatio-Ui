@@ -21,7 +21,7 @@ export function SegmentationList({
   const [polygonDetails, setPolygonDetails] = React.useState("");
 
   return (
-    <div className="mt-6 bg-gray-50 dark:bg-gray-900 p-6 rounded-2xl shadow-sm">
+    <div className=" bg-gray-50 dark:bg-gray-900 p-6 rounded-2xl shadow-sm">
       <h4 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
         Segmentation Details
       </h4>
