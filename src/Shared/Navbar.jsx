@@ -1,12 +1,8 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Sun, Moon } from 'lucide-react';
 
-interface NavbarProps {
-  darkMode: boolean;
-  setDarkMode: (value: boolean) => void;
-}
-
-export default function Navbar({ darkMode, setDarkMode }: NavbarProps) {
+function Navbar({ darkMode, setDarkMode }) {
   return (
     <nav className="fixed w-full bg-white/80 dark:bg-gray-800/60 backdrop-blur-md z-[9999] shadow-sm transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -61,3 +57,10 @@ export default function Navbar({ darkMode, setDarkMode }: NavbarProps) {
     </nav>
   );
 }
+
+Navbar.propTypes = {
+  darkMode: PropTypes.bool.isRequired,
+  setDarkMode: PropTypes.func.isRequired
+};
+
+export default Navbar;

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { RouterProvider } from 'react-router-dom';
-import { router } from './Routes/Routes';
+import { createContext, useContext, useState, useEffect } from 'react';
 
-function App() {
+const ThemeContext = createContext();
+
+export function ThemeProvider({ children }) {
   const [darkMode, setDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
@@ -21,7 +21,11 @@ function App() {
     }
   }, [darkMode]);
 
-  return <RouterProvider router={router} />;
+  return (
+    <ThemeContext.Provider value={{ darkMode, setDarkMode }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 }
 
-export default App;
+export const useTheme = () => useContext(ThemeContext);

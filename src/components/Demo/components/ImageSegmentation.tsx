@@ -1,106 +1,132 @@
-import React, { useRef, useState } from 'react';
-import { Region } from '../types';
-import { MultipleTooltips } from './MultipleTooltips';
-import { MinusCircle, PlusCircle, Maximize2 } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Tooltip } from "react-tooltip";
+import "react-tooltip/dist/react-tooltip.css";
+import { ReportTooltip } from "./ReportTooltip";
+import { MassReport, AxillaReport, CalcificationReport, BreastTissueReport } from "../types/medical";
 
-interface ImageSegmentationProps {
-  imageSrc: string;
-  regions: Region[];
-}
+const REGION_CONFIGS = [
+  {
+    type: 'mass',
+    color: '#1CED3A',
+    report: {
+      definition: "Well-defined",
+      density: "High Dense",
+      shape: "Oval"
+    } as MassReport
+  },
+  {
+    type: 'calcification',
+    color: '#d86b3c',
+    report: {
+      type: "Cluster/Grouped"
+    } as CalcificationReport
+  },
+  {
+    type: 'axilla',
+    color: '#F06EAA',
+    report: {
+      findings: true
+    } as AxillaReport
+  },
+  {
+    type: 'tissue',
+    color: '#089BD8',
+    report: {
+      density: "Heterogeneously Dense"
+    } as BreastTissueReport
+  }
+];
 
-export function ImageSegmentation({ imageSrc, regions }: ImageSegmentationProps) {
-  const [activeRegion, setActiveRegion] = React.useState<string | null>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const containerRef = useRef<HTMLDivElement>(null);
+const isSimilarColor = (color1: string, color2: string, tolerance: number = 30) => {
+  const hex1 = color1.replace("#", "");
+  const hex2 = color2.replace("#", "");
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setMousePosition({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      });
-    }
+  const r1 = parseInt(hex1.substr(0, 2), 16);
+  const g1 = parseInt(hex1.substr(2, 2), 16);
+  const b1 = parseInt(hex1.substr(4, 2), 16);
+
+  const r2 = parseInt(hex2.substr(0, 2), 16);
+  const g2 = parseInt(hex2.substr(2, 2), 16);
+  const b2 = parseInt(hex2.substr(4, 2), 16);
+
+  return Math.abs(r1 - r2) <= tolerance && 
+         Math.abs(g1 - g2) <= tolerance && 
+         Math.abs(b1 - b2) <= tolerance;
+};
+
+const ImageSegmentation = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [currentRegion, setCurrentRegion] = useState<typeof REGION_CONFIGS[0] | null>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+
+    const img = new Image();
+    img.src = '/Asset 2.png';
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+    };
+  }, []);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
+    const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
+    setMousePos({ x: e.clientX, y: e.clientY });
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+
+    const pixel = ctx.getImageData(x, y, 1, 1).data;
+    const color = `#${pixel[0].toString(16).padStart(2, '0')}${pixel[1].toString(16).padStart(2, '0')}${pixel[2].toString(16).padStart(2, '0')}`;
+
+    const region = REGION_CONFIGS.find(r => isSimilarColor(r.color.toLowerCase(), color.toLowerCase()));
+    setCurrentRegion(region || null);
   };
 
-  const handleZoomIn = () => {
-    setZoomLevel(prev => Math.min(prev + 0.1, 2));
-  };
-
-  const handleZoomOut = () => {
-    setZoomLevel(prev => Math.max(prev - 0.1, 0.5));
-  };
-
-  const handleZoomReset = () => {
-    setZoomLevel(1);
+  const handleMouseLeave = () => {
+    setCurrentRegion(null);
   };
 
   return (
-    <div className="relative w-full h-[80vh] aspect-square bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden group">
-      <div 
-        ref={containerRef}
-        className="relative w-full h-full"
-        onMouseMove={handleMouseMove}
-      >
-        <img 
-          src={imageSrc} 
-          alt="Medical scan" 
-          className="w-full h-full object-cover transition-transform duration-200"
-          style={{ transform: `scale(${zoomLevel})` }}
-        />
-        <svg 
-          className="absolute top-0 left-0 w-full h-full transition-transform duration-200"
-          style={{ transform: `scale(${zoomLevel})`, mixBlendMode: 'multiply' }}
-        >
-          <g className="pointer-events-auto">
-            {regions.map((region) => (
-              <path
-                key={region.id}
-                d={region.coords}
-                className={`
-                  fill-blue-500/20 hover:fill-blue-500/40 cursor-pointer transition-all duration-500
-                  ${activeRegion === region.id ? 'stroke-blue-400 stroke-[3px] fill-blue-500/30' : 'stroke-white stroke-[2px]'}
-                `}
-                strokeDasharray="4 2"
-                onMouseEnter={() => setActiveRegion(region.id)}
-                onMouseLeave={() => setActiveRegion(null)}
-              />
-            ))}
-          </g>
-        </svg>
-        {activeRegion && (
-          <MultipleTooltips 
-            region={regions.find(r => r.id === activeRegion)!}
-            mousePosition={mousePosition}
-            onClose={() => setActiveRegion(null)}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-8">
+      <div className="bg-white rounded-xl shadow-lg p-6 max-w-4xl w-full">
+        <h1 className="text-2xl font-semibold text-gray-800 mb-6 text-center">Medical Image Analysis</h1>
+        <div className="relative">
+          <canvas
+            ref={canvasRef}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            className="max-w-full h-auto cursor-crosshair border border-gray-200 rounded-lg"
           />
-        )}
-      </div>
-
-      <div className="absolute bottom-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button 
-          onClick={handleZoomOut} 
-          className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors"
-          title="Zoom Out"
-        >
-          <MinusCircle className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-        </button>
-        <button 
-          onClick={handleZoomIn} 
-          className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors"
-          title="Zoom In"
-        >
-          <PlusCircle className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-        </button>
-        <button 
-          onClick={handleZoomReset} 
-          className="p-2 bg-white dark:bg-gray-700/50 backdrop-blur-sm rounded-full shadow-lg hover:bg-white dark:hover:bg-gray-600 transition-colors"
-          title="Reset Zoom"
-        >
-          <Maximize2 className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-        </button>
+          {currentRegion && (
+            <div
+              className="absolute z-50"
+              style={{
+                left: `${mousePos.x + 20}px`,
+                top: `${mousePos.y}px`
+              }}
+            >
+              <ReportTooltip
+                type={currentRegion.type as "mass" | "axilla" | "calcification" | "breastTissue"}
+                data={currentRegion.report}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default ImageSegmentation;
