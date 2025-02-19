@@ -4,7 +4,7 @@ export interface MassReport {
   shape: "Oval" | "Round" | "Irregular";
 }
 
-export interface AxillaReport {
+export interface AxilliaReport {
   findings: boolean;
 }
 

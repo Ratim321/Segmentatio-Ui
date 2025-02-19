@@ -1,8 +1,8 @@
-import { MassReport, AxillaReport, CalcificationReport, BreastTissueReport } from "../types/medical";
+import { MassReport, AxilliaReport, CalcificationReport, BreastTissueReport } from "../types/medical";
 
 interface ReportTooltipProps {
-  type: "mass" | "axilla" | "calcification" | "breastTissue";
-  data: MassReport | AxillaReport | CalcificationReport | BreastTissueReport;
+  type: "mass" | "axillia" | "calcification" | "breast tissue";
+  data: MassReport | AxilliaReport | CalcificationReport | BreastTissueReport;
 }
 
 export const ReportTooltip = ({ type, data }: ReportTooltipProps) => {
@@ -14,7 +14,7 @@ export const ReportTooltip = ({ type, data }: ReportTooltipProps) => {
     </div>
   );
 
-  const renderAxillaReport = (report: AxillaReport) => (
+  const renderAxilliaReport = (report: AxilliaReport) => (
     <div>
       <p><span className="font-semibold">Findings:</span> {report.findings ? "Yes" : "No"}</p>
     </div>
@@ -36,12 +36,14 @@ export const ReportTooltip = ({ type, data }: ReportTooltipProps) => {
     switch (type) {
       case "mass":
         return renderMassReport(data as MassReport);
-      case "axilla":
-        return renderAxillaReport(data as AxillaReport);
+      case "axillia":
+        return renderAxilliaReport(data as AxilliaReport);
       case "calcification":
         return renderCalcificationReport(data as CalcificationReport);
-      case "breastTissue":
+      case "breast tissue":
         return renderBreastTissueReport(data as BreastTissueReport);
+      default:
+        return null;
     }
   };
 
