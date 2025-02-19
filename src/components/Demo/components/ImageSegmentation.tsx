@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 
 import "react-tooltip/dist/react-tooltip.css";
 import { ReportTooltip } from "./ReportTooltip";
+import { Gallery } from "./Gallery";
 import { processImageReport } from '../../../lib/utils';
 import { imageReports } from '../../../data/reports';
 
@@ -32,8 +33,7 @@ const ImageSegmentation = () => {
   const [currentRegion, setCurrentRegion] = useState<ReturnType<typeof processImageReport>[0] | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  useEffect(() => {
-    const image = imageReports[0].img;
+  const handleImageSelect = (image: string) => {
     setSelectedImage(image);
     setShowSegmentation(false);
     setCurrentReport(null);
@@ -52,7 +52,15 @@ const ImageSegmentation = () => {
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
     };
-  }, []); // Added missing dependency array
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      handleImageSelect(url);
+    }
+  };
 
   const handlePredict = async () => {
     if (!selectedImage) return;
@@ -69,14 +77,6 @@ const ImageSegmentation = () => {
     }
     
     setIsLoading(false);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      handleImageSelect(url);
-    }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -103,12 +103,32 @@ const ImageSegmentation = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-8">
+    <div className="flex flex-col items-center justify-center bg-gray-50 p-8">
       <div className="bg-white rounded-xl shadow-lg p-6 max-w-4xl w-full">
         <h1 className="text-2xl font-semibold text-gray-800 mb-6 text-center">Medical Image Analysis</h1>
-        <div className="relative">
-          <canvas ref={canvasRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} className="max-w-full h-auto cursor-crosshair border border-gray-200 rounded-lg" />
-          {currentRegion && (
+        
+        {/* Gallery Section */}
+        <Gallery 
+          images={imageReports.map(r => r.img)}
+          selectedImage={selectedImage}
+          onImageSelect={handleImageSelect}
+          onFileUpload={handleFileUpload}
+        />
+
+        {/* Canvas Section */}
+        <div className="relative mt-6">
+          <canvas 
+            ref={canvasRef} 
+            onMouseMove={handleMouseMove} 
+            onMouseLeave={handleMouseLeave} 
+            className="max-w-full h-auto cursor-crosshair border border-gray-200 rounded-lg" 
+          />
+          {!selectedImage && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
+              <p className="text-gray-500">Select an image from the gallery or upload one</p>
+            </div>
+          )}
+          {currentRegion && showSegmentation && (
             <div
               className="absolute z-50"
               style={{
@@ -116,10 +136,26 @@ const ImageSegmentation = () => {
                 top: `${mousePos.y}px`,
               }}
             >
-              <ReportTooltip type={currentRegion.type as "mass" | "axilla" | "calcification" | "breastTissue"} data={currentRegion.report} />
+              <ReportTooltip 
+                type={currentRegion.type as "mass" | "axilla" | "calcification" | "breastTissue"} 
+                data={currentRegion.report} 
+              />
             </div>
           )}
         </div>
+
+        {/* Predict Button */}
+        {selectedImage && !showSegmentation && (
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={handlePredict}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Analyzing...' : 'Analyze Image'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
