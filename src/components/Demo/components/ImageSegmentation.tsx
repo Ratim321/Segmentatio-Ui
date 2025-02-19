@@ -3,8 +3,8 @@ import React, { useEffect, useRef, useState } from "react";
 import "react-tooltip/dist/react-tooltip.css";
 import { ReportTooltip } from "./ReportTooltip";
 import { Gallery } from "./Gallery";
-import { processImageReport } from '../../../lib/utils';
-import { imageReports } from '../../../data/reports';
+import { processImageReport } from "../../../lib/utils";
+import { imageReports } from "../../../data/reports";
 
 // Initialize with the first report
 const REGION_CONFIGS = processImageReport(imageReports[0]);
@@ -27,7 +27,7 @@ const isSimilarColor = (color1: string, color2: string, tolerance: number = 30) 
 const ImageSegmentation = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [currentReport, setCurrentReport] = useState<typeof imageReports[0] | null>(null);
+  const [currentReport, setCurrentReport] = useState<(typeof imageReports)[0] | null>(null);
   const [showSegmentation, setShowSegmentation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentRegion, setCurrentRegion] = useState<ReturnType<typeof processImageReport>[0] | null>(null);
@@ -38,7 +38,7 @@ const ImageSegmentation = () => {
     setShowSegmentation(false);
     setCurrentReport(null);
     setCurrentRegion(null);
-    
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -64,18 +64,18 @@ const ImageSegmentation = () => {
 
   const handlePredict = async () => {
     if (!selectedImage) return;
-    
+
     setIsLoading(true);
-    
+
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    
-    const report = imageReports.find(r => r.img === selectedImage);
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+
+    const report = imageReports.find((r) => r.img === selectedImage);
     if (report) {
       setCurrentReport(report);
       setShowSegmentation(true);
     }
-    
+
     setIsLoading(false);
   };
 
@@ -106,23 +106,13 @@ const ImageSegmentation = () => {
     <div className="flex flex-col items-center justify-center bg-gray-50 p-8">
       <div className="bg-white rounded-xl shadow-lg p-6 max-w-4xl w-full">
         <h1 className="text-2xl font-semibold text-gray-800 mb-6 text-center">Medical Image Analysis</h1>
-        
+
         {/* Gallery Section */}
-        <Gallery 
-          images={imageReports.map(r => r.img)}
-          selectedImage={selectedImage}
-          onImageSelect={handleImageSelect}
-          onFileUpload={handleFileUpload}
-        />
+        <Gallery images={imageReports.map((r) => r.img)} selectedImage={selectedImage} onImageSelect={handleImageSelect} onFileUpload={handleFileUpload} />
 
         {/* Canvas Section */}
         <div className="relative mt-6">
-          <canvas 
-            ref={canvasRef} 
-            onMouseMove={handleMouseMove} 
-            onMouseLeave={handleMouseLeave} 
-            className="max-w-full h-auto cursor-crosshair border border-gray-200 rounded-lg" 
-          />
+          <canvas ref={canvasRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} className="max-w-full h-auto cursor-crosshair border border-gray-200 rounded-lg" />
           {!selectedImage && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg">
               <p className="text-gray-500">Select an image from the gallery or upload one</p>
@@ -136,10 +126,7 @@ const ImageSegmentation = () => {
                 top: `${mousePos.y}px`,
               }}
             >
-              <ReportTooltip 
-                type={currentRegion.type as "mass" | "axilla" | "calcification" | "breastTissue"} 
-                data={currentRegion.report} 
-              />
+              <ReportTooltip type={currentRegion.type as "mass" | "axilla" | "calcification" | "breastTissue"} data={currentRegion.report} />
             </div>
           )}
         </div>
@@ -147,12 +134,8 @@ const ImageSegmentation = () => {
         {/* Predict Button */}
         {selectedImage && !showSegmentation && (
           <div className="mt-4 flex justify-center">
-            <button
-              onClick={handlePredict}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Analyzing...' : 'Analyze Image'}
+            <button onClick={handlePredict} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors" disabled={isLoading}>
+              {isLoading ? "Analyzing..." : "Analyze Image"}
             </button>
           </div>
         )}
