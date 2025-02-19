@@ -3,15 +3,13 @@ import { Download, ChevronDown, ChevronRight } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import { ImageReport } from '../../../types/reports';
 import { REGION_COLOR_MAP } from '../../../lib/constants';
-
-interface MedicalReportProps {
-  report: ImageReport;
-  activeSection: string | null;
-}
+import { useContext } from 'react';
+import { ThemeContext } from '../../../context/ThemeContext';
+import { useTheme } from '../../../context/ThemeContext';
 
 export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => {
+  const { darkMode } = useContext(ThemeContext);
   const [expandedSections, setExpandedSections] = useState<number[]>([]);
-
   const toggleSection = (index: number) => {
     setExpandedSections(prev => 
       prev.includes(index) 
@@ -19,7 +17,6 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
         : [...prev, index]
     );
   };
-
   const downloadPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(16);
@@ -41,9 +38,8 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
     
     doc.save(`medical-report-${report.id}.pdf`);
   };
-
   return (
-    <div className="bg-gray-900 text-white p-6 rounded-lg">
+    <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'} p-6 rounded-lg`}>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Medical Report</h2>
         <button
@@ -54,20 +50,27 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
           Download PDF
         </button>
       </div>
-
       <div className="space-y-4">
-        {report.report.map((finding, index) => (
-          finding.found ? (
+        {report.report.map((finding, index) => {
+          // Modified hasData check to include axillia
+          const hasData = finding.type === 'axillia' ? finding.found === 1 : Object.keys(finding).some(key => 
+            key !== 'type' && key !== 'found' && finding[key as keyof typeof finding] !== undefined
+          );
+          
+          return finding.found === 1 ? (
             <div
               key={index}
               className={`
-                border border-gray-700 rounded-lg overflow-hidden
+                ${darkMode ? 'border-gray-700' : 'border-gray-200'} 
+                border rounded-lg overflow-hidden
                 ${activeSection === finding.type ? 'ring-2 ring-yellow-400' : ''}
               `}
             >
               <button
                 onClick={() => toggleSection(index)}
-                className="w-full flex items-center gap-3 p-4 hover:bg-gray-800 transition-colors"
+                className={`w-full flex items-center gap-3 p-4 
+                  ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} 
+                  transition-colors`}
               >
                 <div 
                   className="w-1.5 h-12 rounded-full" 
@@ -78,38 +81,48 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
                 <div className="flex-1 flex items-center justify-between">
                   <div>
                     <h4 className="font-medium text-left capitalize">{finding.type}</h4>
-                    <p className="text-sm text-gray-400">Click to view details</p>
+                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Click to view details
+                    </p>
                   </div>
                   {expandedSections.includes(index) ? (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                    <ChevronDown className={`w-5 h-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                   ) : (
-                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                    <ChevronRight className={`w-5 h-5 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
                   )}
                 </div>
               </button>
-
               {expandedSections.includes(index) && (
-                <div className="px-4 pb-4 pt-2 bg-gray-800/50">
+                <div className={`px-4 pb-4 pt-2 ${darkMode ? 'bg-gray-800/50' : 'bg-gray-50/50'}`}>
                   <div className="space-y-2 pl-8">
-                    {Object.entries(finding).map(([key, value]) => {
-                      if (key !== 'type' && key !== 'found') {
-                        return (
-                          <p key={key} className="text-gray-300">
-                            <span className="text-gray-400 capitalize">
-                              {key.replace(/_/g, ' ')}:
-                            </span>{' '}
-                            {value}
-                          </p>
-                        );
-                      }
-                      return null;
-                    })}
+                    {finding.type === 'axillia' ? (
+                      <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
+                        <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
+                          Findings:
+                        </span>{' '}
+                        Present
+                      </p>
+                    ) : (
+                      Object.entries(finding).map(([key, value]) => {
+                        if (key !== 'type' && key !== 'found') {
+                          return (
+                            <p key={key} className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
+                              <span className={darkMode ? 'text-gray-400' : 'text-gray-500'}>
+                                {key.replace(/_/g, ' ')}:
+                              </span>{' '}
+                              {value}
+                            </p>
+                          );
+                        }
+                        return null;
+                      })
+                    )}
                   </div>
                 </div>
               )}
             </div>
-          ) : null
-        ))}
+          ) : null;
+        })}
       </div>
     </div>
   );
