@@ -46,23 +46,89 @@ export const ReportTooltip = ({ type, data }: ReportTooltipProps) => {
         return null;
     }
   };
-
   return (
     <div className="
-      bg-white dark:bg-gray-800 
-      rounded-lg shadow-xl 
-      p-4 min-w-[200px] 
-      border border-gray-200 dark:border-gray-700
-      backdrop-blur-sm
-      animate-in fade-in zoom-in
-      duration-200
+      relative
+      bg-gray-900/90
+      rounded-sm
+      p-4 min-w-[250px]
+      border border-cyan-400/30
+      backdrop-blur-md
+      animate-in fade-in slide-in-from-left-5
+      duration-300
+      before:content-['']
+      before:absolute
+      before:left-0
+      before:top-0
+      before:w-[3px]
+      before:h-full
+      before:bg-cyan-400
+      before:animate-pulse
+      after:content-['']
+      after:absolute
+      after:left-1
+      after:top-0
+      after:w-[1px]
+      after:h-full
+      after:bg-cyan-400/30
     ">
-      <h3 className="font-semibold text-lg mb-2 capitalize text-gray-900 dark:text-gray-100">
-        {type.replace(/([A-Z])/g, ' $1').trim()}
-      </h3>
-      <div className="text-gray-700 dark:text-gray-300">
+      {/* Decorative corner elements */}
+      <div className="absolute -left-1 -top-1 w-3 h-3 border-l-2 border-t-2 border-cyan-400"></div>
+      <div className="absolute -right-1 -top-1 w-3 h-3 border-r-2 border-t-2 border-cyan-400"></div>
+      <div className="absolute -left-1 -bottom-1 w-3 h-3 border-l-2 border-b-2 border-cyan-400"></div>
+      <div className="absolute -right-1 -bottom-1 w-3 h-3 border-r-2 border-b-2 border-cyan-400"></div>
+
+      {/* Header with tech-style background */}
+      <div className="relative mb-3">
+        <h3 className="
+          font-mono
+          text-lg
+          text-cyan-400
+          uppercase
+          tracking-wider
+          before:content-['[']
+          before:mr-2
+          before:text-cyan-400/50
+          after:content-[']']
+          after:ml-2
+          after:text-cyan-400/50
+        ">
+          {type.replace(/([A-Z])/g, ' $1').trim()}
+        </h3>
+        <div className="absolute -left-4 -right-4 top-1/2 h-[1px] bg-cyan-400/20 -z-10"></div>
+      </div>
+
+      {/* Content with tech styling */}
+      <div className="
+        text-cyan-50
+        space-y-2
+        font-mono
+        text-sm
+        relative
+        pl-4
+        before:content-['']
+        before:absolute
+        before:left-0
+        before:top-0
+        before:w-[1px]
+        before:h-full
+        before:bg-cyan-400/30
+      ">
         {getReport()}
       </div>
+
+      {/* Decorative bottom line */}
+      <div className="
+        absolute
+        bottom-0
+        left-4
+        right-4
+        h-[1px]
+        bg-gradient-to-r
+        from-transparent
+        via-cyan-400/50
+        to-transparent
+      "></div>
     </div>
   );
 };
