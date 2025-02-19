@@ -42,7 +42,7 @@ const ImageSegmentation = () => {
       setCurrentReport(imageReports[0]); 
       setShowSegmentation(true);
       setIsLoading(false);
-    }, 1500);
+    }, 3000);
   };
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -146,6 +146,40 @@ const ImageSegmentation = () => {
       handleImageSelect(url);
     }
   };
+  const LoadingScreen = () => (
+    <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-md flex items-center justify-center rounded-lg z-50">
+      <div className="relative flex flex-col items-center">
+        {/* Neural Network Animation */}
+        <div className="relative w-32 h-32 mb-8">
+          <div className="absolute inset-0 bg-cyan-500/20 rounded-lg animate-pulse"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-24 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-[shimmer_2s_infinite]"></div>
+          </div>
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-cyan-400 rounded-full animate-ping"></div>
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-cyan-400 rounded-full animate-ping [animation-delay:0.3s]"></div>
+        </div>
+  
+        {/* Loading Text */}
+        <div className="text-center">
+          <h3 className="text-xl font-mono text-white mb-2">Extracting Features</h3>
+          <div className="flex items-center gap-1 justify-center text-cyan-400">
+            <div className="w-2 h-2 rounded-full bg-current animate-bounce"></div>
+            <div className="w-2 h-2 rounded-full bg-current animate-bounce [animation-delay:0.2s]"></div>
+            <div className="w-2 h-2 rounded-full bg-current animate-bounce [animation-delay:0.4s]"></div>
+          </div>
+        </div>
+  
+        {/* Progress Bar */}
+        <div className="mt-6 w-48">
+          <div className="h-1 w-full bg-gray-700 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 w-full animate-[progress_1.5s_ease-in-out_infinite]"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+  
+  // Update the existing loading condition in your return statement
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2">
@@ -174,14 +208,7 @@ const ImageSegmentation = () => {
               <p className="text-gray-500 dark:text-gray-400">Select an image from the gallery above</p>
             </div>
           )}
-          {isLoading && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
-              <div className="text-white text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-white border-t-transparent mb-2" />
-                <p>Analyzing image...</p>
-              </div>
-            </div>
-          )}
+          {isLoading && <LoadingScreen />}
           {currentRegion && showSegmentation && (
             <div
               className="fixed z-50 pointer-events-none"
