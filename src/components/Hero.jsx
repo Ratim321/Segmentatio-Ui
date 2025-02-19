@@ -1,7 +1,10 @@
 import React from 'react';
 import { Brain, Activity, ScanFace } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Hero() {
+  const navigate = useNavigate();
+
   return (
     <div
       className="
@@ -15,7 +18,7 @@ export default function Hero() {
         transition-colors
       "
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+      <div className="max-w-7xl h-screen flex flex-col items-center justify-center mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="text-center">
           <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-gray-100 mb-8 animate-fade-in">
             Advanced Medical Image
@@ -28,7 +31,10 @@ export default function Hero() {
             Precise, fast, and reliable segmentation for better diagnosis.
           </p>
           <div className="flex justify-center gap-4">
-            <button className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button 
+              onClick={() => navigate('/demo')}
+              className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
               Try Demo
             </button>
             <button className="px-8 py-3 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
