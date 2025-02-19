@@ -34,7 +34,7 @@ export const imageReports: ImageReport[] = [
     report: [
       {
         type: "mass",
-        found: 1,
+        found: 0,
       },
       {
         type: "axillia",
@@ -65,7 +65,7 @@ export const imageReports: ImageReport[] = [
       },
       {
         type: "axillia",
-        found: 1,
+        found: 0,
       },
       {
         type: "calcification",

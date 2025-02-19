@@ -48,9 +48,21 @@ export const ReportTooltip = ({ type, data }: ReportTooltipProps) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-4 min-w-[200px] border border-gray-200">
-      <h3 className="font-semibold text-lg mb-2 capitalize">{type.replace(/([A-Z])/g, ' $1').trim()}</h3>
-      {getReport()}
+    <div className="
+      bg-white dark:bg-gray-800 
+      rounded-lg shadow-xl 
+      p-4 min-w-[200px] 
+      border border-gray-200 dark:border-gray-700
+      backdrop-blur-sm
+      animate-in fade-in zoom-in
+      duration-200
+    ">
+      <h3 className="font-semibold text-lg mb-2 capitalize text-gray-900 dark:text-gray-100">
+        {type.replace(/([A-Z])/g, ' $1').trim()}
+      </h3>
+      <div className="text-gray-700 dark:text-gray-300">
+        {getReport()}
+      </div>
     </div>
   );
 };
