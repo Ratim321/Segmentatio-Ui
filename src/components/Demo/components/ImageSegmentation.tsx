@@ -5,6 +5,7 @@ import { processImageReport } from '../../../lib/utils';
 import { imageReports } from '../../../data/reports';
 import { MedicalReport } from './MedicalReport';
 import { Gallery } from './Gallery';
+import { ComparisonModal } from './ComparisonModal';
 
 const REGION_CONFIGS = processImageReport(imageReports[0]);
 
@@ -33,6 +34,8 @@ const ImageSegmentation = () => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
+
   const handlePredict = async () => {
     if (!selectedImage) return;
   
@@ -44,18 +47,17 @@ const ImageSegmentation = () => {
       setIsLoading(false);
     }, 3000);
   };
+
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas || !showSegmentation || !currentReport) return; 
   
     const rect = canvas.getBoundingClientRect();
-    // Calculate the scaled coordinates
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     const x = Math.floor((e.clientX - rect.left) * scaleX);
     const y = Math.floor((e.clientY - rect.top) * scaleY);
   
-    // Update mouse position for tooltip
     setMousePos({ 
       x: e.clientX + 15,
       y: e.clientY - 10
@@ -64,7 +66,6 @@ const ImageSegmentation = () => {
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
   
-    // Sample a 3x3 pixel area for more accurate color detection
     const size = 3;
     const halfSize = Math.floor(size / 2);
     const pixels = ctx.getImageData(
@@ -74,7 +75,6 @@ const ImageSegmentation = () => {
       size
     ).data;
   
-    // Calculate average color from the sampled area
     let r = 0, g = 0, b = 0;
     for (let i = 0; i < pixels.length; i += 4) {
       r += pixels[i];
@@ -88,7 +88,6 @@ const ImageSegmentation = () => {
   
     const color = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
   
-    // Find the closest matching region with reduced tolerance
     const region = REGION_CONFIGS.find(reg => isSimilarColor(reg.color, color, 20));
   
     if (region) {
@@ -101,11 +100,13 @@ const ImageSegmentation = () => {
       setActiveSection(null);
     }
   };
+
   const handleMouseLeave = () => {
     setCurrentRegion(null);
     setIsHovering(false);
     setActiveSection(null);
   };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -113,12 +114,12 @@ const ImageSegmentation = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     
-    // Set initial canvas size
     canvas.width = 800;
     canvas.height = 600;
-    ctx.fillStyle = '#f3f4f6'; // Light gray background
+    ctx.fillStyle = '#f3f4f6';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }, []);
+
   const handleImageSelect = (image: string) => {
     setSelectedImage(image);
     setShowSegmentation(false);
@@ -139,6 +140,7 @@ const ImageSegmentation = () => {
       ctx.drawImage(img, 0, 0);
     };
   };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -146,10 +148,10 @@ const ImageSegmentation = () => {
       handleImageSelect(url);
     }
   };
+
   const LoadingScreen = () => (
     <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-md flex items-center justify-center rounded-lg z-50">
       <div className="relative flex flex-col items-center">
-        {/* Neural Network Animation */}
         <div className="relative w-32 h-32 mb-8">
           <div className="absolute inset-0 bg-cyan-500/20 rounded-lg animate-pulse"></div>
           <div className="absolute inset-0 flex items-center justify-center">
@@ -159,7 +161,6 @@ const ImageSegmentation = () => {
           <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-cyan-400 rounded-full animate-ping [animation-delay:0.3s]"></div>
         </div>
   
-        {/* Loading Text */}
         <div className="text-center">
           <h3 className="text-xl font-mono text-white mb-2">Extracting Features</h3>
           <div className="flex items-center gap-1 justify-center text-cyan-400">
@@ -169,7 +170,6 @@ const ImageSegmentation = () => {
           </div>
         </div>
   
-        {/* Progress Bar */}
         <div className="mt-6 w-48">
           <div className="h-1 w-full bg-gray-700 rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 w-full animate-[progress_1.5s_ease-in-out_infinite]"></div>
@@ -179,11 +179,9 @@ const ImageSegmentation = () => {
     </div>
   );
   
-  // Update the existing loading condition in your return statement
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2">
-        {/* Add Gallery at the top */}
         <Gallery 
           images={imageReports.map(r => r.img)}
           selectedImage={selectedImage}
@@ -237,6 +235,16 @@ const ImageSegmentation = () => {
             </button>
           </div>
         )}
+        {showSegmentation && currentReport && (
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={() => setIsComparisonModalOpen(true)}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Compare with Other Cases
+            </button>
+          </div>
+        )}
       </div>
       <div className="lg:col-span-1">
         {showSegmentation && currentReport && (
@@ -246,6 +254,14 @@ const ImageSegmentation = () => {
           />
         )}
       </div>
+
+      {currentReport && (
+        <ComparisonModal
+          currentReport={currentReport}
+          isOpen={isComparisonModalOpen}
+          onClose={() => setIsComparisonModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
