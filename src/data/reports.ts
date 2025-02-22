@@ -3,7 +3,8 @@ import { ImageReport } from "../types/reports";
 export const imageReports: ImageReport[] = [
   {
     id: 1,
-    img: "/Asset 1.png",
+    input_img: "/input/Image 1.png",
+    output_img: "/output/Asset 1.png",
     report: [
       {
         type: "mass",
@@ -30,7 +31,8 @@ export const imageReports: ImageReport[] = [
   },
   {
     id: 2,
-    img: "/Asset 2.png",
+    input_img: "/input/Image 2.png",
+    output_img: "/output/Asset 2.png",
     report: [
       {
         type: "mass",
@@ -54,7 +56,8 @@ export const imageReports: ImageReport[] = [
   },
   {
     id: 3,
-    img: "/Asset 3.png",
+    input_img: "/input/Image 3.png",
+    output_img: "/output/Asset 3.png",
     report: [
       {
         type: "mass",
@@ -81,7 +84,8 @@ export const imageReports: ImageReport[] = [
   },
   {
     id: 4,
-    img: "/Asset 4.png",
+    input_img: "/input/Image 4.png",
+    output_img: "/output/Asset 4.png",
     report: [
       {
         type: "mass",
@@ -107,7 +111,8 @@ export const imageReports: ImageReport[] = [
   },
   {
     id: 5,
-    img: "/Asset 5.png",
+    input_img: "/input/Image 5.png",
+    output_img: "/output/Asset 5.png",
     report: [
       {
         type: "mass",

@@ -31,6 +31,7 @@ export type RegionData = MassData | AxilliaData | CalcificationData | BreastTiss
 
 export interface ImageReport {
   id: number;
-  img: string;
+  input_img: string;
+  output_img: string;
   report: RegionData[];
 }
