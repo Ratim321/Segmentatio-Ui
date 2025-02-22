@@ -73,7 +73,7 @@ export const ComparisonModal = ({ currentReport, isOpen, onClose }: ComparisonMo
               </h4>
               <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
                 <img
-                  src={currentReport.img}
+                  src={currentReport.output_img}
                   alt="Current case"
                   className="w-full h-full object-cover"
                 />
@@ -108,7 +108,7 @@ export const ComparisonModal = ({ currentReport, isOpen, onClose }: ComparisonMo
               </div>
               <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
                 <img
-                  src={otherReports[currentIndex].img}
+                  src={otherReports[currentIndex].output_img}
                   alt={`Comparison case ${currentIndex + 1}`}
                   className="w-full h-full object-cover"
                 />
