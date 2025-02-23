@@ -8,6 +8,9 @@ interface ReportTooltipProps {
 export const ReportTooltip = ({ type, data }: ReportTooltipProps) => {
   const renderMassReport = (report: MassReport) => (
     <div className="space-y-2">
+      <p className="text-cyan-400 font-semibold mb-2">
+        Confidence: {report.confidence.toFixed(1)}%
+      </p>
       <p>
         <span className="font-semibold">Definition:</span> {report.definition}
       </p>

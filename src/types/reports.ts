@@ -1,6 +1,7 @@
 export interface MassData {
   type: "mass";
   found: 0 | 1;
+  confidence: number; // Add confidence percentage
   definition?: "Well-defined" | "Ill-defined" | "Spiculated";
   density?: "Low Dense" | "Iso-dense/ Equal Dense" | "High Dense";
   shape?: "Oval" | "Round" | "Irregular";
@@ -9,17 +10,20 @@ export interface MassData {
 export interface AxilliaData {
   type: "axillia";
   found: 0 | 1;
+  confidence: number; // Add confidence percentage
 }
 
 export interface CalcificationData {
   type: "calcification";
   found: 0 | 1;
+  confidence: number; // Add confidence percentage
   calcification_type?: "Discrete" | "Cluster/Grouped" | "Line/Segmental";
 }
 
 export interface BreastTissueData {
   type: "breast tissue";
   found: 0 | 1;
+  confidence: number; // Add confidence percentage
   breast_density?: 
     | "fatty/normal" 
     | "fibroglandular/mixed fatty and fibroglandular" 

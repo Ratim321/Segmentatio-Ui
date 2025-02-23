@@ -9,6 +9,7 @@ export const imageReports: ImageReport[] = [
       {
         type: "mass",
         found: 1,
+        confidence: 98.5,
         definition: "Spiculated",
         density: "Low Dense",
         shape: "Irregular",
@@ -16,15 +17,18 @@ export const imageReports: ImageReport[] = [
       {
         type: "axillia",
         found: 1,
+        confidence: 95.2,
       },
       {
         type: "calcification",
         found: 1,
+        confidence: 92.8,
         calcification_type: "Cluster/Grouped",
       },
       {
         type: "breast tissue",
         found: 1,
+        confidence: 99.1,
         breast_density: "heterogeneously dense",
       },
     ],

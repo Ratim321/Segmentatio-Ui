@@ -8,9 +8,12 @@ import { Gallery } from "./Gallery";
 import { ComparisonModal } from "./ComparisonModal";
 import { Layers } from "lucide-react";
 
+type RegionConfig = ReturnType<typeof processImageReport>[0];
+type ImageReport = (typeof imageReports)[0];
+
 const REGION_CONFIGS = processImageReport(imageReports[0]);
 
-const isSimilarColor = (color1: string, color2: string, tolerance: number = 30) => {
+const isSimilarColor = (color1: string, color2: string, tolerance: number = 30): boolean => {
   const hex1 = color1.replace("#", "");
   const hex2 = color2.replace("#", "");
 
@@ -25,19 +28,49 @@ const isSimilarColor = (color1: string, color2: string, tolerance: number = 30) 
   return Math.abs(r1 - r2) <= tolerance && Math.abs(g1 - g2) <= tolerance && Math.abs(b1 - b2) <= tolerance;
 };
 
-const ImageSegmentation = () => {
+const LoadingScreen: React.FC = () => (
+  <div className="absolute inset-0 w-auto bg-gray-900/80 backdrop-blur-md flex items-center justify-center rounded-lg z-50">
+    <div className="relative flex flex-col items-center w-full">
+      <div className="relative w-32 h-32 mb-8">
+        <div className="absolute inset-0 bg-cyan-500/20 rounded-lg animate-pulse"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-24 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-[shimmer_2s_infinite]"></div>
+        </div>
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-cyan-400 rounded-full animate-ping"></div>
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-cyan-400 rounded-full animate-ping [animation-delay:0.3s]"></div>
+      </div>
+
+      <div className="text-center">
+        <h3 className="text-xl font-mono text-white mb-2">Extracting Features</h3>
+        <div className="flex items-center gap-1 justify-center text-cyan-400">
+          <div className="w-2 h-2 rounded-full bg-current animate-bounce"></div>
+          <div className="w-2 h-2 rounded-full bg-current animate-bounce [animation-delay:0.2s]"></div>
+          <div className="w-2 h-2 rounded-full bg-current animate-bounce [animation-delay:0.4s]"></div>
+        </div>
+      </div>
+
+      <div className="mt-6 w-48">
+        <div className="h-1 w-full bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 w-full animate-[progress_1.5s_ease-in-out_infinite]"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const ImageSegmentation: React.FC = () => {
   const inputCanvasRef = useRef<HTMLCanvasElement>(null);
   const outputCanvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [currentReport, setCurrentReport] = useState<(typeof imageReports)[0] | null>(null);
+  const [currentReport, setCurrentReport] = useState<ImageReport | null>(null);
   const [showSegmentation, setShowSegmentation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentRegion, setCurrentRegion] = useState<ReturnType<typeof processImageReport>[0] | null>(null);
+  const [currentRegion, setCurrentRegion] = useState<RegionConfig | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
-  const [opacity, setOpacity] = useState(0); 
+  const [opacity, setOpacity] = useState(0);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -47,35 +80,29 @@ const ImageSegmentation = () => {
     }
   };
 
-  const LoadingScreen = () => (
-    <div className="absolute inset-0 bg-gray-900/80 backdrop-blur-md flex items-center justify-center rounded-lg z-50">
-      <div className="relative flex flex-col items-center">
-        <div className="relative w-32 h-32 mb-8">
-          <div className="absolute inset-0 bg-cyan-500/20 rounded-lg animate-pulse"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-24 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent animate-[shimmer_2s_infinite]"></div>
-          </div>
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-cyan-400 rounded-full animate-ping"></div>
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-cyan-400 rounded-full animate-ping [animation-delay:0.3s]"></div>
-        </div>
+  const handleImageSelect = (image: string) => {
+    const report = imageReports.find((r) => r.input_img === image);
+    if (!report) return;
 
-        <div className="text-center">
-          <h3 className="text-xl font-mono text-white mb-2">Extracting Features</h3>
-          <div className="flex items-center gap-1 justify-center text-cyan-400">
-            <div className="w-2 h-2 rounded-full bg-current animate-bounce"></div>
-            <div className="w-2 h-2 rounded-full bg-current animate-bounce [animation-delay:0.2s]"></div>
-            <div className="w-2 h-2 rounded-full bg-current animate-bounce [animation-delay:0.4s]"></div>
-          </div>
-        </div>
+    setSelectedImage(image);
+    setCurrentReport(report);
+    setShowSegmentation(false);
+    setCurrentRegion(null);
 
-        <div className="mt-6 w-48">
-          <div className="h-1 w-full bg-gray-700 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 w-full animate-[progress_1.5s_ease-in-out_infinite]"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    const img = new Image();
+    img.src = image;
+    img.onload = () => {
+      const inputCanvas = inputCanvasRef.current;
+      if (!inputCanvas) return;
+
+      const ctx = inputCanvas.getContext("2d");
+      if (!ctx) return;
+
+      inputCanvas.width = img.width;
+      inputCanvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+    };
+  };
 
   const handlePredict = async () => {
     if (!selectedImage || !currentReport) return;
@@ -139,7 +166,6 @@ const ImageSegmentation = () => {
     b = Math.round(b / pixelCount);
 
     const color = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-
     const region = REGION_CONFIGS.find((reg) => isSimilarColor(reg.color, color, 20));
 
     if (region) {
@@ -159,90 +185,53 @@ const ImageSegmentation = () => {
     setActiveSection(null);
   };
 
-  // Add this state near the other state declarations
-  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
-  
-  // Modify the handleImageSelect function
-  const handleImageSelect = (image: string) => {
-    const report = imageReports.find(r => r.input_img === image);
-    if (!report) return;
-  
-    setSelectedImage(image);
-    setCurrentReport(report);
-    setShowSegmentation(false);
-    setCurrentRegion(null);
-  
-    const img = new Image();
-    img.src = image;
-    img.onload = () => {
-      setImageDimensions({ width: img.width, height: img.height });
-      
-      const inputCanvas = inputCanvasRef.current;
-      if (!inputCanvas) return;
-  
-      const ctx = inputCanvas.getContext("2d");
-      if (!ctx) return;
-  
-      inputCanvas.width = img.width;
-      inputCanvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-    };
-  };
-  
-  // Modify the container div in the JSX
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div className="min-h-screen flex flex-col p-6">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Section - Gallery and Image Display */}
         <div className="lg:col-span-2">
-          <Gallery 
-            images={imageReports.map((r) => r.input_img)} 
-            selectedImage={selectedImage} 
-            onImageSelect={handleImageSelect} 
-            onFileUpload={handleFileUpload} 
-          />
-      
-          <div className="relative mb-4">
+          <Gallery images={imageReports.map((r) => r.input_img)} selectedImage={selectedImage} onImageSelect={handleImageSelect} onFileUpload={handleFileUpload} />
+
+          <div className="relative mt-4">
             <div 
-              className="relative"
-              style={{ width: imageDimensions.width, height: imageDimensions.height }}
+              className="relative h-screen" // Changed from h-[calc(100vh-12rem)] to h-screen
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
             >
-              {/* Canvas elements and other content */}
               {/* Input Image Layer */}
               <canvas
                 ref={inputCanvasRef}
                 className={`
-                  w-auto h-full object-contain
-                  border border-gray-200 dark:border-gray-700 rounded-lg 
                   absolute top-0 left-0 z-20
+                  h-full w-auto
+                  border border-gray-200 dark:border-gray-700 rounded-lg 
                   ${showSegmentation ? "cursor-crosshair" : "cursor-default"}
                   transition-all duration-300
                 `}
                 style={{ opacity: showSegmentation ? opacity : 1 }}
               />
-      
+
               {/* Output Image Layer */}
               <canvas
                 ref={outputCanvasRef}
                 className={`
-                  w-full h-full object-contain
+                  h-full w-auto
                   border border-gray-200 dark:border-gray-700 rounded-lg 
                   ${showSegmentation ? "cursor-crosshair" : "cursor-default"}
                   transition-all duration-300
                 `}
               />
-      
+
               {/* Placeholder */}
               {!selectedImage && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="absolute inset-0 w-auto flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <p className="text-gray-500 dark:text-gray-400">Select an image from the gallery above</p>
                 </div>
               )}
-      
+
               {/* Loading Screen */}
               {isLoading && <LoadingScreen />}
-      
+
               {/* Tooltip */}
               {currentRegion && showSegmentation && (
                 <div
@@ -250,72 +239,80 @@ const ImageSegmentation = () => {
                   style={{
                     left: `${mousePos.x}px`,
                     top: `${mousePos.y}px`,
-                    transform: "scale(1.05)",
-                    transition: "transform 0.2s ease-out",
                   }}
                 >
                   <ReportTooltip type={currentRegion.type as "mass" | "axilla" | "calcification" | "breast tissue"} data={currentRegion.report} />
                 </div>
               )}
-      
+
               {/* Opacity Slider */}
               {showSegmentation && (
-                <div className="absolute top-4 right-4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg z-30">
-                  <div className="flex items-center gap-3">
-                    <Layers className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={opacity}
-                      onChange={(e) => setOpacity(parseFloat(e.target.value))}
-                      className="w-32"
-                    />
+                <div className="absolute top-4 right-4 bg-white/10 backdrop-blur-md p-4 rounded-lg shadow-lg z-30 border border-white/20">
+                  <div className="flex flex-col items-center gap-3">
+                    <Layers className="w-5 h-5 text-cyan-700 dark:text-cyan-400" />
+                    <div className="h-32 flex items-center">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.01"
+                        value={opacity}
+                        onChange={(e) => setOpacity(parseFloat(e.target.value))}
+                        className="rotate-90 
+                          appearance-none bg-gradient-to-t from-cyan-700/20 dark:from-cyan-400/20 to-cyan-700/5 dark:to-cyan-400/5
+                          rounded-lg overflow-hidden w-32
+                          [&::-webkit-slider-thumb]:w-4
+                          [&::-webkit-slider-thumb]:h-4
+                          [&::-webkit-slider-thumb]:appearance-none
+                          [&::-webkit-slider-thumb]:bg-cyan-700
+                          [&::-webkit-slider-thumb]:dark:bg-cyan-400
+                          [&::-webkit-slider-thumb]:rounded-full
+                          [&::-webkit-slider-thumb]:border-4
+                          [&::-webkit-slider-thumb]:border-white/20
+                          [&::-webkit-slider-thumb]:cursor-pointer
+                          [&::-webkit-slider-thumb]:shadow-lg
+                          [&::-webkit-slider-thumb]:shadow-cyan-700/30
+                          [&::-webkit-slider-thumb]:dark:shadow-cyan-400/30
+                          [&::-webkit-slider-thumb]:transition-all
+                          [&::-webkit-slider-thumb]:hover:scale-110"
+                      />
+                    </div>
+                    <span className="text-xs text-cyan-700 dark:text-cyan-400 font-medium text-center">
+                      Slide down to view<br />input image
+                    </span>
                   </div>
                 </div>
               )}
             </div>
           </div>
-      
+        </div>
+
+        {/* Right Section - Analysis Controls and Report */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Analysis Button - Show when image selected but not analyzed */}
           {selectedImage && !showSegmentation && (
-            <div className="mt-4 flex justify-center">
-              <button 
-                onClick={handlePredict} 
-                disabled={isLoading} 
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-              >
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
+              <h3 className="text-lg font-semibold mb-4">Image Analysis</h3>
+              <button onClick={handlePredict} disabled={isLoading} className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
                 {isLoading ? "Analyzing..." : "Analyze Image"}
               </button>
             </div>
           )}
-      
+
+          {/* Medical Report - Show after analysis */}
           {showSegmentation && currentReport && (
-            <div className="mt-4 flex justify-center">
-              <button 
-                onClick={() => setIsComparisonModalOpen(true)} 
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Compare with Other Cases
+            <>
+              <MedicalReport report={currentReport} activeSection={currentRegion?.type || null} />
+              <button onClick={() => setIsComparisonModalOpen(true)} className="w-full text-lg px-6 py-3 border border-green-700 hover:border-green-700 bg-green-700 hover:dark:bg-gray-800 hover:dark:text-white text-white rounded-lg hover:bg-white hover:text-green-700 transition-colors">
+                Compare  with Other Cases
               </button>
-            </div>
-          )}
-        </div>
-      
-        <div className="lg:col-span-1">
-          {showSegmentation && currentReport && (
-            <MedicalReport report={currentReport} activeSection={currentRegion?.type || null} />
+            </>
           )}
         </div>
       </div>
-      
-      {currentReport && (
-        <ComparisonModal 
-          currentReport={currentReport} 
-          isOpen={isComparisonModalOpen} 
-          onClose={() => setIsComparisonModalOpen(false)} 
-        />
-      )}
+
+      {/* Comparison Modal */}
+      {currentReport && <ComparisonModal currentReport={currentReport} isOpen={isComparisonModalOpen} onClose={() => setIsComparisonModalOpen(false)} />}
     </div>
   );
 };
