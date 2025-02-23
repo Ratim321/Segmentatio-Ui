@@ -29,7 +29,7 @@ const isSimilarColor = (color1: string, color2: string, tolerance: number = 30):
 };
 
 const LoadingScreen: React.FC = () => (
-  <div className="absolute inset-0 w-auto bg-gray-900/80 backdrop-blur-md flex items-center justify-center rounded-lg z-50">
+  <div className="absolute inset-0 w-auto bg-gray-900/80 backdrop-blur-2xl flex items-center justify-center rounded-lg z-50">
     <div className="relative flex flex-col items-center w-full">
       <div className="relative w-32 h-32 mb-8">
         <div className="absolute inset-0 bg-cyan-500/20 rounded-lg animate-pulse"></div>
@@ -194,7 +194,7 @@ const ImageSegmentation: React.FC = () => {
 
           <div className="relative mt-4">
             <div 
-              className="relative h-screen" // Changed from h-[calc(100vh-12rem)] to h-screen
+              className="relative h-[90vh]" // Changed from h-[calc(100vh-12rem)] to h-screen
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
             >
@@ -204,7 +204,7 @@ const ImageSegmentation: React.FC = () => {
                 className={`
                   absolute top-0 left-0 z-20
                   h-full w-auto
-                  border border-gray-200 dark:border-gray-700 rounded-lg 
+                dark:border-gray-700 rounded-lg 
                   ${showSegmentation ? "cursor-crosshair" : "cursor-default"}
                   transition-all duration-300
                 `}
@@ -216,7 +216,7 @@ const ImageSegmentation: React.FC = () => {
                 ref={outputCanvasRef}
                 className={`
                   h-full w-auto
-                  border border-gray-200 dark:border-gray-700 rounded-lg 
+                  dark:border-gray-700 rounded-lg 
                   ${showSegmentation ? "cursor-crosshair" : "cursor-default"}
                   transition-all duration-300
                 `}
@@ -224,8 +224,33 @@ const ImageSegmentation: React.FC = () => {
 
               {/* Placeholder */}
               {!selectedImage && (
-                <div className="absolute inset-0 w-auto flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <p className="text-gray-500 dark:text-gray-400">Select an image from the gallery above</p>
+                <div className="absolute inset-0 w-full flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700">
+                  <div className="flex flex-col items-center space-y-4 p-6">
+                    <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                      <svg
+                        className="w-8 h-8 text-gray-400 dark:text-gray-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="text-center space-y-2">
+                      <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                        No Image Selected
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Choose an image from the gallery above to begin analysis
+                      </p>
+                    </div>
+                   
+                  </div>
                 </div>
               )}
 
