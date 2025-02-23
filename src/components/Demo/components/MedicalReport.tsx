@@ -19,22 +19,69 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
   };
   const downloadPDF = () => {
     const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text('Medical Report', 20, 20);
-    doc.setFontSize(12);
     
-    let y = 40;
+    // Add background
+    doc.setFillColor(248, 250, 252);
+    doc.rect(0, 0, doc.internal.pageSize.width, doc.internal.pageSize.height, 'F');
+    
+    // Add header with logo and title
+    doc.setFillColor(59, 130, 246);
+    doc.rect(0, 0, doc.internal.pageSize.width, 40, 'F');
+    
+    // Add title
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(24);
+    doc.text('MediScan Labs', 20, 25);
+    
+    // Add subtitle
+    doc.setFontSize(12);
+    doc.text('Advanced Medical Imaging Report', 20, 35);
+    
+    // Add report info
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Report ID: ${report.id}`, 140, 25);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 140, 35);
+    
+    // Add content
+    let y = 60;
+    
     report.report.forEach(finding => {
-      doc.text(`${finding.type.toUpperCase()}:`, 20, y);
-      y += 10;
-      Object.entries(finding).forEach(([key, value]) => {
-        if (key !== 'type' && key !== 'found') {
-          doc.text(`- ${key}: ${value}`, 30, y);
-          y += 10;
-        }
-      });
-      y += 5;
+      if (finding.found) {
+        // Section header
+        doc.setFillColor(241, 245, 249);
+        doc.rect(15, y - 5, doc.internal.pageSize.width - 30, 20, 'F');
+        
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(31, 41, 55);
+        doc.setFontSize(14);
+        doc.text(`${finding.type.toUpperCase()}`, 20, y + 8);
+        y += 25;
+        
+        // Section content
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(12);
+        doc.setTextColor(75, 85, 99);
+        
+        Object.entries(finding).forEach(([key, value]) => {
+          if (key !== 'type' && key !== 'found') {
+            // Add bullet point
+            doc.circle(25, y - 2, 1, 'F');
+            doc.text(`${key.replace(/_/g, ' ')}: ${value}`, 35, y);
+            y += 10;
+          }
+        });
+        
+        y += 15; // Space between sections
+      }
     });
+    
+    // Add footer
+    const pageHeight = doc.internal.pageSize.height;
+    doc.setFontSize(10);
+    doc.setTextColor(156, 163, 175);
+    doc.text('This report is generated automatically and should be reviewed by a qualified medical professional.', 20, pageHeight - 20);
     
     doc.save(`medical-report-${report.id}.pdf`);
   };
