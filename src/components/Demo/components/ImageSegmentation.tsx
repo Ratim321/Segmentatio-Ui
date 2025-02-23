@@ -37,7 +37,7 @@ const ImageSegmentation = () => {
   const [isHovering, setIsHovering] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
-  const [opacity, setOpacity] = useState(1); // New state for layer opacity
+  const [opacity, setOpacity] = useState(0); 
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
