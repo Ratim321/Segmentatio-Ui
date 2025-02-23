@@ -88,6 +88,7 @@ const ImageSegmentation: React.FC = () => {
     setCurrentReport(report);
     setShowSegmentation(false);
     setCurrentRegion(null);
+    setActiveSection(null);
 
     const img = new Image();
     img.src = image;
@@ -194,7 +195,7 @@ const ImageSegmentation: React.FC = () => {
 
           <div className="relative mt-4">
             <div 
-              className="relative h-[90vh]" // Changed from h-[calc(100vh-12rem)] to h-screen
+              className="relative h-[90vh]"
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
             >
@@ -204,7 +205,7 @@ const ImageSegmentation: React.FC = () => {
                 className={`
                   absolute top-0 left-0 z-20
                   h-full w-auto
-                dark:border-gray-700 rounded-lg 
+                  dark:border-gray-700 rounded-lg 
                   ${showSegmentation ? "cursor-crosshair" : "cursor-default"}
                   transition-all duration-300
                 `}
@@ -222,34 +223,37 @@ const ImageSegmentation: React.FC = () => {
                 `}
               />
 
-              {/* Placeholder */}
+              {/* Placeholder Hero Section */}
               {!selectedImage && (
-                <div className="absolute inset-0 w-full flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-200 dark:border-gray-700">
-                  <div className="flex flex-col items-center space-y-4 p-6">
-                    <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                      <svg
-                        className="w-8 h-8 text-gray-400 dark:text-gray-500"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
+                <div className="absolute inset-0 w-auto flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg overflow-hidden">
+                  {/* Animated Background Pattern */}
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="absolute inset-0 bg-grid-gray-900/30 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+                  </div>
+                  
+                  {/* Main Content */}
+                  <div className="relative flex flex-col items-center text-center p-8 space-y-6 max-w-2xl mx-auto">
+                    {/* Icon */}
+                    <div className="relative">
+                      <div className="absolute inset-0 animate-pulse bg-cyan-500/20 rounded-full blur-xl"></div>
+                      <div className="relative w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                        <svg className="w-12 h-12 text-white animate-float" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
                     </div>
-                    <div className="text-center space-y-2">
-                      <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300">
-                        No Image Selected
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Choose an image from the gallery above to begin analysis
+
+                    {/* Text Content */}
+                    <div className="space-y-4">
+                      <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
+                        Medical Image Analysis
+                      </h2>
+                      <p className="text-gray-600 dark:text-gray-300 max-w-md animate-fade-in">
+                        Select an image from the gallery above to begin advanced medical analysis using our AI-powered segmentation technology.
                       </p>
                     </div>
-                   
+
                   </div>
                 </div>
               )}
@@ -327,9 +331,9 @@ const ImageSegmentation: React.FC = () => {
           {/* Medical Report - Show after analysis */}
           {showSegmentation && currentReport && (
             <>
-              <MedicalReport report={currentReport} activeSection={currentRegion?.type || null} />
+              <MedicalReport report={currentReport} activeSection={activeSection} />
               <button onClick={() => setIsComparisonModalOpen(true)} className="w-full text-lg px-6 py-3 border border-green-700 hover:border-green-700 bg-green-700 hover:dark:bg-gray-800 hover:dark:text-white text-white rounded-lg hover:bg-white hover:text-green-700 transition-colors">
-                Compare  with Other Cases
+                Compare with Other Cases
               </button>
             </>
           )}

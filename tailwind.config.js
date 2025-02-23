@@ -5,6 +5,7 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   darkMode: 'class', // Enable dark mode with class strategy
+  
   theme: {
     extend: {
       keyframes: {
@@ -18,6 +19,18 @@ export default {
           '100%': { transform: 'translateX(100%)' }
         }
       }
+      ,
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        }
+      },
+      animation: {
+        'float': 'float 3s ease-in-out infinite',
+      }
     }
   }
-};
+  
+  };
+}

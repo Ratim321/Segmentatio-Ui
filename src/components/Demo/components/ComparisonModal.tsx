@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ArrowLeft, ArrowRight } from 'lucide-react';
 import { imageReports } from '../../../data/reports';
 import { MedicalReport } from './MedicalReport';
 
@@ -12,12 +12,15 @@ interface ComparisonModalProps {
 export const ComparisonModal = ({ currentReport, isOpen, onClose }: ComparisonModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const otherReports = imageReports.filter(report => report.id !== currentReport.id);
+  const [animationDirection, setAnimationDirection] = useState<'left' | 'right' | null>(null);
 
   const handleNext = () => {
+    setAnimationDirection('right');
     setCurrentIndex((prev) => (prev + 1) % otherReports.length);
   };
 
   const handlePrevious = () => {
+    setAnimationDirection('left');
     setCurrentIndex((prev) => (prev - 1 + otherReports.length) % otherReports.length);
   };
 
@@ -26,13 +29,20 @@ export const ComparisonModal = ({ currentReport, isOpen, onClose }: ComparisonMo
       if (e.key === 'Escape') onClose();
     };
 
+    const handleArrowKeys = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') handlePrevious();
+      if (e.key === 'ArrowRight') handleNext();
+    };
+
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
+      document.addEventListener('keydown', handleArrowKeys);
       document.body.style.overflow = 'hidden';
     }
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('keydown', handleArrowKeys);
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
@@ -41,37 +51,65 @@ export const ComparisonModal = ({ currentReport, isOpen, onClose }: ComparisonMo
 
   return (
     <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center overflow-y-auto p-4"
+      className="fixed inset-0 bg-black/30 backdrop-blur-md z-50 flex items-center justify-center overflow-y-auto p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div 
-        className="bg-white dark:bg-gray-800 w-full max-w-6xl rounded-xl shadow-2xl my-auto"
-        style={{ maxHeight: '80vh' }}
+        className="
+          relative w-full max-w-7xl rounded-2xl overflow-hidden
+          bg-white/10 backdrop-blur-xl
+          border border-white/20
+          shadow-[0_0_40px_rgba(0,0,0,0.2)]
+          dark:shadow-[0_0_40px_rgba(255,255,255,0.1)]
+          my-auto
+        "
+        style={{ maxHeight: '85vh' }}
       >
+        {/* Decorative elements */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 pointer-events-none" />
+        <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
+
         {/* Header */}
-        <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-800 z-10 rounded-t-xl">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-            Case Comparison Analysis
-          </h3>
+        <div className="relative border-b border-white/10 p-6 flex justify-between items-center bg-white/5">
+          <div>
+            <h3 className="text-2xl font-semibold text-white">
+              Case Comparison Analysis
+            </h3>
+            <p className="text-white/60 text-sm mt-1">
+              Compare findings with similar cases
+            </p>
+          </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="
+              p-2 rounded-lg
+              hover:bg-white/10
+              transition-colors
+              group
+            "
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6 text-white/60 group-hover:text-white" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(80vh - 70px)' }}>
+        <div className="relative p-6 overflow-y-auto" style={{ maxHeight: 'calc(85vh - 83px)' }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Current Case */}
             <div className="space-y-4">
-              <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 sticky top-0 bg-white dark:bg-gray-800 py-2 z-10">
-                Current Case
-              </h4>
-              <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-2 h-8 bg-blue-500 rounded-full" />
+                <div>
+                  <h4 className="text-lg font-medium text-white">
+                    Current Case
+                  </h4>
+                  <p className="text-white/60 text-sm">Reference case for comparison</p>
+                </div>
+              </div>
+              
+              <div className="aspect-square bg-black/20 rounded-xl overflow-hidden border border-white/10">
                 <img
                   src={currentReport.output_img}
                   alt="Current case"
@@ -85,28 +123,55 @@ export const ComparisonModal = ({ currentReport, isOpen, onClose }: ComparisonMo
 
             {/* Comparison Case */}
             <div className="space-y-4">
-              <div className="flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 py-2 z-10">
-                <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                  Comparison Case {currentIndex + 1} of {otherReports.length}
-                </h4>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-8 bg-purple-500 rounded-full" />
+                  <div>
+                    <h4 className="text-lg font-medium text-white">
+                      Comparison Case {currentIndex + 1} of {otherReports.length}
+                    </h4>
+                    <p className="text-white/60 text-sm">Similar cases for analysis</p>
+                  </div>
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={handlePrevious}
-                    className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                    className="
+                      p-2 rounded-lg
+                      bg-white/5 hover:bg-white/10
+                      border border-white/10
+                      transition-all
+                      group
+                    "
                     aria-label="Previous case"
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className="w-5 h-5 text-white/60 group-hover:text-white" />
                   </button>
                   <button
                     onClick={handleNext}
-                    className="p-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                    className="
+                      p-2 rounded-lg
+                      bg-white/5 hover:bg-white/10
+                      border border-white/10
+                      transition-all
+                      group
+                    "
                     aria-label="Next case"
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className="w-5 h-5 text-white/60 group-hover:text-white" />
                   </button>
                 </div>
               </div>
-              <div className="aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
+              
+              <div 
+                className={`
+                  aspect-square bg-black/20 rounded-xl overflow-hidden border border-white/10
+                  transition-all duration-500
+                  ${animationDirection === 'left' ? 'animate-slide-left' : ''}
+                  ${animationDirection === 'right' ? 'animate-slide-right' : ''}
+                `}
+                onAnimationEnd={() => setAnimationDirection(null)}
+              >
                 <img
                   src={otherReports[currentIndex].output_img}
                   alt={`Comparison case ${currentIndex + 1}`}
@@ -118,6 +183,16 @@ export const ComparisonModal = ({ currentReport, isOpen, onClose }: ComparisonMo
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Navigation Hints */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 text-white/40 text-sm">
+          <span className="flex items-center gap-1">
+            <ArrowLeft className="w-4 h-4" /> Previous Case
+          </span>
+          <span className="flex items-center gap-1">
+            Next Case <ArrowRight className="w-4 h-4" />
+          </span>
         </div>
       </div>
     </div>

@@ -9,19 +9,30 @@ import { ThemeContext } from "../../../context/ThemeContext";
 export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => {
   const { darkMode } = useContext(ThemeContext);
   const [expandedSections, setExpandedSections] = useState<number[]>([]);
+
+  // Update expanded sections when activeSection changes
+  React.useEffect(() => {
+    if (activeSection) {
+      const sectionIndex = report.report.findIndex(finding => finding.type === activeSection);
+      if (sectionIndex !== -1 && !expandedSections.includes(sectionIndex)) {
+        setExpandedSections(prev => [...prev, sectionIndex]);
+      }
+    }
+  }, [activeSection, report.report]);
+
   const toggleSection = (index: number) => {
     setExpandedSections((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]));
   };
+
   const downloadPDF = () => {
     const doc = new jsPDF();
     const margin = 20;
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
     const contentWidth = pageWidth - 2 * margin;
-    const maxY = pageHeight - margin - 15; // Leave space for page numbers
+    const maxY = pageHeight - margin - 15;
     let y = 60;
 
-    // Function to handle text wrapping and pagination
     const addWrappedText = (text: string, x: number, yPos: number, maxWidth: number) => {
       const lines = doc.splitTextToSize(text, maxWidth);
       lines.forEach((line: string) => {
@@ -35,42 +46,31 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
       return yPos;
     };
 
-    // Function to add header to each page
     const addHeader = () => {
-      // Add header with logo and title
       doc.setFillColor(59, 130, 246);
       doc.rect(0, 0, pageWidth, 40, "F");
-
-      // Add title
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(24);
       doc.text("MediScan Labs", 20, 25);
-
-      // Add subtitle
       doc.setFontSize(12);
       doc.text("Advanced Medical Imaging Report", 20, 35);
-
-      // Add report info
       doc.setTextColor(255, 255, 255);
       doc.setFont("helvetica", "normal");
       doc.text(`Report ID: ${report.id}`, 140, 25);
       doc.text(`Date: ${new Date().toLocaleDateString()}`, 140, 35);
     };
 
-    // Add header to first page
     addHeader();
 
     report.report.forEach((finding) => {
       if (finding.found) {
-        // Check if we need a new page
         if (y > maxY) {
           doc.addPage();
-          addHeader(); // Add header to new page
-          y = margin + 40; // Adjust starting position to account for header
+          addHeader();
+          y = margin + 40;
         }
 
-        // Section header
         doc.setFillColor(241, 245, 249);
         doc.rect(margin, y - 5, contentWidth, 20, "F");
 
@@ -80,7 +80,6 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
         doc.text(`${finding.type.toUpperCase()}`, margin + 5, y + 8);
         y += 25;
 
-        // Section content
         doc.setFont("helvetica", "normal");
         doc.setFontSize(12);
         doc.setTextColor(75, 85, 99);
@@ -100,7 +99,7 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
             } else {
               doc.circle(margin + 5, y - 2, 1, "F");
               y = addWrappedText(`${key.replace(/_/g, " ")}: ${value}`, margin + 15, y, contentWidth - 20);
-              y -= 10; // Adjust for the increment below
+              y -= 10;
             }
             y += 10;
           }
@@ -110,11 +109,10 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
       }
     });
 
-    // Add disclaimer
     if (y > maxY) {
       doc.addPage();
-      addHeader(); // Add header to new page
-      y = margin + 40; // Adjust starting position to account for header
+      addHeader();
+      y = margin + 40;
     }
 
     y += 10;
@@ -122,7 +120,7 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
     doc.rect(margin, y - 5, contentWidth, 20, "F");
     doc.setFont("helvetica", "italic");
     doc.setFontSize(11);
-    doc.setTextColor(156, 163, 175); // Subtle gray color
+    doc.setTextColor(156, 163, 175);
     y = addWrappedText(
       "This report is generated automatically and should be reviewed by a qualified medical professional.",
       margin + 5,
@@ -130,7 +128,6 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
       contentWidth - 10
     );
 
-    // Add page numbers
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
@@ -142,6 +139,7 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
 
     doc.save(`medical-report-${report.id}.pdf`);
   };
+
   return (
     <div className={`${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} p-6 rounded-lg`}>
       <div className="flex justify-between items-center mb-6">
@@ -153,7 +151,6 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
       </div>
       <div className="space-y-4">
         {report.report.map((finding, index) => {
-          // Modified hasData check to include axillia
           const hasData = finding.type === "axillia" ? finding.found === 1 : Object.keys(finding).some((key) => key !== "type" && key !== "found" && finding[key as keyof typeof finding] !== undefined);
 
           return finding.found === 1 ? (
@@ -163,6 +160,7 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
                 ${darkMode ? "border-gray-700" : "border-gray-200"} 
                 border rounded-lg overflow-hidden
                 ${activeSection === finding.type ? "ring-2 ring-yellow-400" : ""}
+                transition-all duration-300
               `}
             >
               <button
@@ -178,9 +176,16 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
                   }}
                 />
                 <div className="flex-1 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium text-left capitalize">{finding.type}</h4>
-                    <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Click to view details</p>
+                  <div className="flex items-center gap-4">
+                    <div>
+                      <h4 className="font-medium text-left capitalize">{finding.type}</h4>
+                      <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Click to view details</p>
+                    </div>
+                    {finding.confidence && (
+                      <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-md text-sm font-medium">
+                        {finding.confidence.toFixed(1)}%
+                      </span>
+                    )}
                   </div>
                   {expandedSections.includes(index) ? <ChevronDown className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-500"}`} /> : <ChevronRight className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-500"}`} />}
                 </div>
@@ -194,7 +199,7 @@ export const MedicalReport = ({ report, activeSection }: MedicalReportProps) => 
                       </p>
                     ) : (
                       Object.entries(finding).map(([key, value]) => {
-                        if (key !== "type" && key !== "found") {
+                        if (key !== "type" && key !== "found" && key !== "confidence") {
                           return (
                             <p key={key} className={darkMode ? "text-gray-300" : "text-gray-600"}>
                               <span className={darkMode ? "text-gray-400" : "text-gray-500"}>{key.replace(/_/g, " ")}:</span> {value}
