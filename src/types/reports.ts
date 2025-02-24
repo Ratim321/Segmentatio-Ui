@@ -4,14 +4,16 @@ export interface MassData {
   confidence: number; // Add confidence percentage
   definition?: "Well-defined" | "Ill-defined" | "Spiculated";
   density?: "Low Dense" | "Iso-dense/ Equal Dense" | "High Dense";
-  shape?: "Oval" | "Round" | "Irregular";
+  shape?: "Oval" | "Rounded" | "Irregular";
+  measurement?: string;
+  mass_calcification: string;
 }
 
 export interface AxilliaData {
   type: "axillia";
   found: 0 | 1;
-  confidence: number; // Add confidence percentage
-}
+  confidence: number; 
+  axilla_type: string
 
 export interface CalcificationData {
   type: "calcification";
@@ -31,11 +33,14 @@ export interface BreastTissueData {
     | "highly dense";
 }
 
-export type RegionData = MassData | AxilliaData | CalcificationData | BreastTissueData;
+export type RegionData = MassData | AxilliaData | CalcificationData | BreastTissueData ;
 
 export interface ImageReport {
   id: number;
   input_img: string;
   output_img: string;
   report: RegionData[];
+  BIRADS: number;
+  comment: string[];
+  
 }

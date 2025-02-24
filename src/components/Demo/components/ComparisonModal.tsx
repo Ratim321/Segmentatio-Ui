@@ -95,7 +95,17 @@ export const ComparisonModal = ({ currentReport, isOpen, onClose }: ComparisonMo
         </div>
 
         {/* Content */}
-        <div className="relative p-6 overflow-y-auto" style={{ maxHeight: 'calc(85vh - 83px)' }}>
+        <div className="relative p-6 overflow-y-auto 
+                scrollbar-thin 
+                scrollbar-track-scrollbar-track 
+                scrollbar-thumb-scrollbar-thumb 
+                hover:scrollbar-thumb-scrollbar-thumb-hover
+                [&::-webkit-scrollbar]:w-1.5
+                [&::-webkit-scrollbar-thumb]:rounded-full
+                [&::-webkit-scrollbar-track]:rounded-full
+              "
+                style={{ maxHeight: 'calc(85vh - 83px)' }}
+              >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Current Case */}
             <div className="space-y-4">
@@ -116,7 +126,7 @@ export const ComparisonModal = ({ currentReport, isOpen, onClose }: ComparisonMo
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="overflow-y-auto">
+              <div className="overflow-y-auto scrollbar-thin scrollbar-track-white/5 scrollbar-thumb-white/20 hover:scrollbar-thumb-white/30">
                 <MedicalReport report={currentReport} activeSection={null} />
               </div>
             </div>
@@ -178,22 +188,14 @@ export const ComparisonModal = ({ currentReport, isOpen, onClose }: ComparisonMo
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="overflow-y-auto">
+              <div className="overflow-y-auto scrollbar-thin scrollbar-track-white/5 scrollbar-thumb-white/20 hover:scrollbar-thumb-white/30">
                 <MedicalReport report={otherReports[currentIndex]} activeSection={null} />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Navigation Hints */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 text-white/40 text-sm">
-          <span className="flex items-center gap-1">
-            <ArrowLeft className="w-4 h-4" /> Previous Case
-          </span>
-          <span className="flex items-center gap-1">
-            Next Case <ArrowRight className="w-4 h-4" />
-          </span>
-        </div>
+        
       </div>
     </div>
   );

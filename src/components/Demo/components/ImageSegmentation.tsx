@@ -188,17 +188,14 @@ const ImageSegmentation: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col p-6">
+      <h1></h1>
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Section - Gallery and Image Display */}
         <div className="lg:col-span-2">
           <Gallery images={imageReports.map((r) => r.input_img)} selectedImage={selectedImage} onImageSelect={handleImageSelect} onFileUpload={handleFileUpload} />
 
           <div className="relative mt-4">
-            <div 
-              className="relative h-[90vh]"
-              onMouseMove={handleMouseMove}
-              onMouseLeave={handleMouseLeave}
-            >
+            <div className="relative h-[80vh]" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
               {/* Input Image Layer */}
               <canvas
                 ref={inputCanvasRef}
@@ -230,7 +227,7 @@ const ImageSegmentation: React.FC = () => {
                   <div className="absolute inset-0 opacity-10">
                     <div className="absolute inset-0 bg-grid-gray-900/30 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
                   </div>
-                  
+
                   {/* Main Content */}
                   <div className="relative flex flex-col items-center text-center p-8 space-y-6 max-w-2xl mx-auto">
                     {/* Icon */}
@@ -238,22 +235,16 @@ const ImageSegmentation: React.FC = () => {
                       <div className="absolute inset-0 animate-pulse bg-cyan-500/20 rounded-full blur-xl"></div>
                       <div className="relative w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
                         <svg className="w-12 h-12 text-white animate-float" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                       </div>
                     </div>
 
                     {/* Text Content */}
                     <div className="space-y-4">
-                      <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">
-                        Medical Image Analysis
-                      </h2>
-                      <p className="text-gray-600 dark:text-gray-300 max-w-md animate-fade-in">
-                        Select an image from the gallery above to begin advanced medical analysis using our AI-powered segmentation technology.
-                      </p>
+                      <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">Medical Image Analysis</h2>
+                      <p className="text-gray-600 dark:text-gray-300 max-w-md animate-fade-in">Select an image from the gallery above to begin advanced medical analysis using our AI-powered segmentation technology.</p>
                     </div>
-
                   </div>
                 </div>
               )}
@@ -307,7 +298,9 @@ const ImageSegmentation: React.FC = () => {
                       />
                     </div>
                     <span className="text-xs text-cyan-700 dark:text-cyan-400 font-medium text-center">
-                      Slide down to view<br />input image
+                      Slide down to view
+                      <br />
+                      input image
                     </span>
                   </div>
                 </div>
@@ -317,7 +310,7 @@ const ImageSegmentation: React.FC = () => {
         </div>
 
         {/* Right Section - Analysis Controls and Report */}
-        <div className="lg:col-span-1 space-y-6">
+        <div className="lg:col-span-1 space-y-6 sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto">
           {/* Analysis Button - Show when image selected but not analyzed */}
           {selectedImage && !showSegmentation && (
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">

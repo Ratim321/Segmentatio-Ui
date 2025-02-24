@@ -3,6 +3,8 @@ export interface MassReport {
   definition: "Well-defined" | "Ill-defined" | "Spiculated";
   density: "Low Dense" | "Iso-dense" | "High Dense";
   shape: "Oval" | "Round" | "Irregular";
+  mass_calcification: string;
+  measurements: string;
 }
 
 export interface AxilliaReport {
