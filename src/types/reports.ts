@@ -1,7 +1,7 @@
 export interface MassData {
   type: "mass";
   found: 0 | 1;
-  confidence: number; // Add confidence percentage
+  confidence: number;
   definition?: "Well-defined" | "Ill-defined" | "Spiculated";
   density?: "Low Dense" | "Iso-dense/ Equal Dense" | "High Dense";
   shape?: "Oval" | "Rounded" | "Irregular";
@@ -9,23 +9,24 @@ export interface MassData {
   mass_calcification: string;
 }
 
-export interface AxilliaData {
-  type: "axillia";
+export interface AxillaData {
+  type: "axilla";
   found: 0 | 1;
-  confidence: number; 
-  axilla_type: string
+  confidence: number;
+  axilla_type: string;
+}
 
 export interface CalcificationData {
   type: "calcification";
   found: 0 | 1;
-  confidence: number; // Add confidence percentage
+  confidence: number;
   calcification_type?: "Discrete" | "Cluster/Grouped" | "Line/Segmental";
 }
 
 export interface BreastTissueData {
   type: "breast tissue";
   found: 0 | 1;
-  confidence: number; // Add confidence percentage
+  confidence: number;
   breast_density?: 
     | "fatty/normal" 
     | "fibroglandular/mixed fatty and fibroglandular" 
@@ -33,7 +34,7 @@ export interface BreastTissueData {
     | "highly dense";
 }
 
-export type RegionData = MassData | AxilliaData | CalcificationData | BreastTissueData ;
+export type RegionData = MassData | AxillaData | CalcificationData | BreastTissueData;
 
 export interface ImageReport {
   id: number;
@@ -42,5 +43,4 @@ export interface ImageReport {
   report: RegionData[];
   BIRADS: number;
   comment: string[];
-  
 }

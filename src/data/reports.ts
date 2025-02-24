@@ -19,7 +19,7 @@ export const imageReports: ImageReport[] = [
         mass_calcification: "No",
       },
       {
-        type: "axillia",
+        type: "axilla",
         found: 1,
         confidence: 95.2,
         axilla_type: "Fatty Hillum",
@@ -56,7 +56,7 @@ export const imageReports: ImageReport[] = [
         mass_calcification: "Yes",
       },
       {
-        type: "axillia",
+        type: "axilla",
         found: 1,
         confidence: 92.2,
         axilla_type: "Fatty Hillum",
@@ -65,7 +65,6 @@ export const imageReports: ImageReport[] = [
         type: "calcification",
         found: 0,
         confidence: 96.8,
-        
       },
       {
         type: "breast tissue",
@@ -93,7 +92,7 @@ export const imageReports: ImageReport[] = [
         mass_calcification: "No",
       },
       {
-        type: "axillia",
+        type: "axilla",
         found: 1,
         confidence: 95.1,
         axilla_type: "Fatty Hillum",
@@ -102,7 +101,6 @@ export const imageReports: ImageReport[] = [
         type: "calcification",
         found: 0,
         confidence: 92.8,
-        
       },
       {
         type: "breast tissue",
@@ -112,7 +110,4 @@ export const imageReports: ImageReport[] = [
       },
     ],
   },
- 
-
- 
 ];

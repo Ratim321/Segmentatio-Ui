@@ -1,10 +1,10 @@
-import { MassData, AxilliaData, CalcificationData, BreastTissueData } from "../../../types/reports";
+import { MassData, AxillaData, CalcificationData, BreastTissueData } from "../../../types/reports";
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface ReportTooltipProps {
-  type: "mass" | "axillia" | "calcification" | "breast tissue";
-  data: MassData | AxilliaData | CalcificationData | BreastTissueData;
+  type: "mass" | "axilla" | "calcification" | "breast tissue";
+  data: MassData | AxillaData | CalcificationData | BreastTissueData;
   birads?: number;
   comments?: string[];
 }
@@ -15,24 +15,24 @@ export const ReportTooltip = ({ type, data, birads, comments }: ReportTooltipPro
   const renderMassReport = (report: MassData) => (
     <div className="space-y-2">
       <p>
-        <span className="font-semibold">Definition:</span> {report?.definition}
+        <span className="font-semibold">Definition:</span> {report.definition}
       </p>
       <p>
-        <span className="font-semibold">Density:</span> {report?.density}
+        <span className="font-semibold">Density:</span> {report.density}
       </p>
       <p>
-        <span className="font-semibold">Shape:</span> {report?.shape}
+        <span className="font-semibold">Shape:</span> {report.shape}
       </p>
       <p>
-        <span className="font-semibold">Mass-Calcification:</span> {report?.mass_calcification}
+        <span className="font-semibold">Mass-Calcification:</span> {report.mass_calcification}
       </p>
       <p>
-        <span className="font-semibold">Measurements:</span> {report?.measurement}
+        <span className="font-semibold">Measurements:</span> {report.measurement}
       </p>
     </div>
   );
 
-  const renderAxilliaReport = (report: AxilliaData) => (
+  const renderAxillaReport = (report: AxillaData) => (
     <div>
       <p>
         <span className="font-semibold">Type:</span> {report.axilla_type}
@@ -60,8 +60,8 @@ export const ReportTooltip = ({ type, data, birads, comments }: ReportTooltipPro
     switch (type) {
       case "mass":
         return renderMassReport(data as MassData);
-      case "axillia":
-        return renderAxilliaReport(data as AxilliaData);
+      case "axilla":
+        return renderAxillaReport(data as AxillaData);
       case "calcification":
         return renderCalcificationReport(data as CalcificationData);
       case "breast tissue":
@@ -70,6 +70,7 @@ export const ReportTooltip = ({ type, data, birads, comments }: ReportTooltipPro
         return null;
     }
   };
+
   return (
     <div
       className="
@@ -110,6 +111,11 @@ export const ReportTooltip = ({ type, data, birads, comments }: ReportTooltipPro
         <h3 className="font-mono text-lg text-white/90 uppercase tracking-wider">
           {type.replace(/([A-Z])/g, " $1").trim()}
         </h3>
+        {data.confidence && (
+          <span className="absolute top-0 right-0 px-2 py-1 bg-green-500/20 rounded text-sm font-mono text-green-400">
+            {data.confidence.toFixed(1)}%
+          </span>
+        )}
       </div>
 
       {/* Content */}
@@ -147,16 +153,16 @@ export const ReportTooltip = ({ type, data, birads, comments }: ReportTooltipPro
       {/* Decorative bottom line */}
       <div
         className="
-        absolute
-        bottom-0
-        left-4
-        right-4
-        h-[1px]
-        bg-gradient-to-r
-        from-transparent
-        via-white/20
-        to-transparent
-      "
+          absolute
+          bottom-0
+          left-4
+          right-4
+          h-[1px]
+          bg-gradient-to-r
+          from-transparent
+          via-white/20
+          to-transparent
+        "
       ></div>
     </div>
   );

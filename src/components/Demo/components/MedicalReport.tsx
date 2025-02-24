@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import { Download, ChevronDown, ChevronRight } from "lucide-react";
+import { Download, ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { ThemeContext } from "../../../context/ThemeContext";
 import { REGION_COLOR_MAP } from "../../../lib/constants";
@@ -15,44 +15,11 @@ interface MedicalReportProps {
   report: {
     id: string;
     report: Finding[];
+    BIRADS?: number;
+    comment?: string[];
   };
-  activeSection?: string;
+  activeSection?: string | null;
 }
-
-const PDFGenerator = {
-  createInfoRow(doc: jsPDF, label: string, value: string, x: number, y: number): number {
-    doc.setFont("helvetica", "bold");
-    doc.text(label, x, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(`: ${value}`, x + 25, y);
-    return y + 7;
-  },
-
-  createTable(doc: jsPDF, headers: string[], rows: string[][], startY: number, margin: number, contentWidth: number): number {
-    const cellPadding = 5;
-    const colWidth = contentWidth / headers.length;
-    const rowHeight = 8;
-
-    // Headers
-    doc.setFont("helvetica", "bold");
-    headers.forEach((header, i) => {
-      doc.rect(margin + i * colWidth, startY - 5, colWidth, rowHeight + 5);
-      doc.text(header, margin + i * colWidth + cellPadding, startY);
-    });
-
-    // Rows
-    doc.setFont("helvetica", "normal");
-    rows.forEach((row, rowIndex) => {
-      const rowY = startY + (rowIndex + 1) * (rowHeight + 2);
-      row.forEach((cell, colIndex) => {
-        doc.rect(margin + colIndex * colWidth, rowY - 5, colWidth, rowHeight + 5);
-        doc.text(cell || "-", margin + colIndex * colWidth + cellPadding, rowY);
-      });
-    });
-
-    return startY + (rows.length + 1) * (rowHeight + 2) + 5;
-  },
-};
 
 const FindingSection: React.FC<{
   finding: Finding;
@@ -97,9 +64,9 @@ const FindingSection: React.FC<{
       {isExpanded && (
         <div className={`px-4 pb-4 pt-2 ${darkMode ? "bg-gray-800/50" : "bg-gray-50/50"}`}>
           <div className="space-y-2 pl-8">
-            {finding.type === "axillia" ? (
+            {finding.type === "axilla" ? (
               <p className={darkMode ? "text-gray-300" : "text-gray-600"}>
-                <span className={darkMode ? "text-gray-400" : "text-gray-500"}>Findings:</span> Present
+                <span className={darkMode ? "text-gray-400" : "text-gray-500"}>Type:</span> {finding.axilla_type}
               </p>
             ) : (
               Object.entries(finding).map(([key, value]) => {
@@ -187,7 +154,7 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
     }
 
     // Lymph node findings
-    const axillaFindings = report.report.find((f) => f.type === "axillia" && f.found);
+    const axillaFindings = report.report.find((f) => f.type === "axilla" && f.found);
     if (axillaFindings) {
       y += 15;
       doc.setFont("helvetica", "bold");
@@ -225,7 +192,58 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
           Download PDF
         </button>
       </div>
-      <div className="space-y-4">{report.report.map((finding, index) => finding.found === 1 && <FindingSection key={index} finding={finding} index={index} isExpanded={expandedSections.includes(index)} isActive={activeSection === finding.type} darkMode={darkMode} onToggle={() => toggleSection(index)} />)}</div>
+      
+      <div className="space-y-4">
+        {report.report.map((finding, index) => finding.found === 1 && (
+          <FindingSection 
+            key={index} 
+            finding={finding} 
+            index={index} 
+            isExpanded={expandedSections.includes(index)} 
+            isActive={activeSection === finding.type} 
+            darkMode={darkMode} 
+            onToggle={() => toggleSection(index)} 
+          />
+        ))}
+
+        {/* BIRADS and Comments Section */}
+        {report.BIRADS && (
+          <div className={`
+            mt-8 pt-6 border-t
+            ${darkMode ? "border-gray-700" : "border-gray-200"}
+          `}>
+            <div className="flex items-start gap-3">
+              <AlertCircle className={`w-5 h-5 mt-0.5 ${report.BIRADS >= 4 ? "text-red-500" : "text-yellow-500"}`} />
+              <div>
+                <h3 className="text-lg font-medium mb-2">Assessment</h3>
+                <div className="space-y-4">
+                  <div className={`
+                    inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                    ${report.BIRADS >= 4 
+                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" 
+                      : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"}
+                  `}>
+                    BIRADS Category {report.BIRADS}
+                  </div>
+                  
+                  {report.comment && report.comment.length > 0 && (
+                    <div className="space-y-2">
+                      {report.comment.map((comment, index) => (
+                        <p key={index} className={`
+                          text-sm pl-4 border-l-2
+                          ${darkMode ? "text-gray-300 border-gray-700" : "text-gray-600 border-gray-200"}
+                        `}>
+                          {comment}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
