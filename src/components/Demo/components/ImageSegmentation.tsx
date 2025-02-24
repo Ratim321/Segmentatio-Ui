@@ -187,22 +187,29 @@ const ImageSegmentation: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col p-6">
-      <h1></h1>
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Section - Gallery and Image Display */}
-        <div className="lg:col-span-2">
-          <Gallery images={imageReports.map((r) => r.input_img)} selectedImage={selectedImage} onImageSelect={handleImageSelect} onFileUpload={handleFileUpload} />
+    <div className="h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-900">
+      <div className="h-full grid grid-cols-[300px_1fr_500px] gap-6 p-6">
+        {/* Left Column - Gallery */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg overflow-y-auto">
+          <Gallery 
+            images={imageReports.map((r) => r.input_img)} 
+            selectedImage={selectedImage} 
+            onImageSelect={handleImageSelect} 
+            onFileUpload={handleFileUpload} 
+          />
+        </div>
 
-          <div className="relative mt-4">
-            <div className="relative h-[80vh]" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+        {/* Middle Column - Image Display */}
+        <div className="relative h-full bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+          <div className="h-full flex items-start" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+            <div className="relative h-full" style={{ aspectRatio: '1/1' }}>
               {/* Input Image Layer */}
               <canvas
                 ref={inputCanvasRef}
                 className={`
                   absolute top-0 left-0 z-20
-                  h-full w-auto
-                  dark:border-gray-700 rounded-lg 
+                  h-full w-full
+                  dark:border-gray-700 
                   ${showSegmentation ? "cursor-crosshair" : "cursor-default"}
                   transition-all duration-300
                 `}
@@ -213,109 +220,109 @@ const ImageSegmentation: React.FC = () => {
               <canvas
                 ref={outputCanvasRef}
                 className={`
-                  h-full w-auto
-                  dark:border-gray-700 rounded-lg 
+                  h-full w-full
+                  dark:border-gray-700
                   ${showSegmentation ? "cursor-crosshair" : "cursor-default"}
                   transition-all duration-300
                 `}
               />
-
-              {/* Placeholder Hero Section */}
-              {!selectedImage && (
-                <div className="absolute inset-0 w-auto flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg overflow-hidden">
-                  {/* Animated Background Pattern */}
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute inset-0 bg-grid-gray-900/30 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
-                  </div>
-
-                  {/* Main Content */}
-                  <div className="relative flex flex-col items-center text-center p-8 space-y-6 max-w-2xl mx-auto">
-                    {/* Icon */}
-                    <div className="relative">
-                      <div className="absolute inset-0 animate-pulse bg-cyan-500/20 rounded-full blur-xl"></div>
-                      <div className="relative w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
-                        <svg className="w-12 h-12 text-white animate-float" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    </div>
-
-                    {/* Text Content */}
-                    <div className="space-y-4">
-                      <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">Medical Image Analysis</h2>
-                      <p className="text-gray-600 dark:text-gray-300 max-w-md animate-fade-in">Select an image from the gallery above to begin advanced medical analysis using our AI-powered segmentation technology.</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Loading Screen */}
-              {isLoading && <LoadingScreen />}
-
-              {/* Tooltip */}
-              {currentRegion && showSegmentation && (
-                <div
-                  className="fixed z-50 pointer-events-none"
-                  style={{
-                    left: `${mousePos.x}px`,
-                    top: `${mousePos.y}px`,
-                  }}
-                >
-                  <ReportTooltip type={currentRegion.type as "mass" | "axilla" | "calcification" | "breast tissue"} data={currentRegion.report} />
-                </div>
-              )}
-
-              {/* Opacity Slider */}
-              {showSegmentation && (
-                <div className="absolute top-4 right-4 bg-white/10 backdrop-blur-md p-4 rounded-lg shadow-lg z-30 border border-white/20">
-                  <div className="flex flex-col items-center gap-3">
-                    <Layers className="w-5 h-5 text-cyan-700 dark:text-cyan-400" />
-                    <div className="h-32 flex items-center">
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value={opacity}
-                        onChange={(e) => setOpacity(parseFloat(e.target.value))}
-                        className="rotate-90 
-                          appearance-none bg-gradient-to-t from-cyan-700/20 dark:from-cyan-400/20 to-cyan-700/5 dark:to-cyan-400/5
-                          rounded-lg overflow-hidden w-32
-                          [&::-webkit-slider-thumb]:w-4
-                          [&::-webkit-slider-thumb]:h-4
-                          [&::-webkit-slider-thumb]:appearance-none
-                          [&::-webkit-slider-thumb]:bg-cyan-700
-                          [&::-webkit-slider-thumb]:dark:bg-cyan-400
-                          [&::-webkit-slider-thumb]:rounded-full
-                          [&::-webkit-slider-thumb]:border-4
-                          [&::-webkit-slider-thumb]:border-white/20
-                          [&::-webkit-slider-thumb]:cursor-pointer
-                          [&::-webkit-slider-thumb]:shadow-lg
-                          [&::-webkit-slider-thumb]:shadow-cyan-700/30
-                          [&::-webkit-slider-thumb]:dark:shadow-cyan-400/30
-                          [&::-webkit-slider-thumb]:transition-all
-                          [&::-webkit-slider-thumb]:hover:scale-110"
-                      />
-                    </div>
-                    <span className="text-xs text-cyan-700 dark:text-cyan-400 font-medium text-center">
-                      Slide down to view
-                      <br />
-                      input image
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
+
+            {/* Placeholder Hero Section */}
+            {!selectedImage && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute inset-0 bg-grid-gray-900/30 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+                </div>
+
+                <div className="relative flex flex-col items-center text-center p-8 space-y-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 animate-pulse bg-cyan-500/20 rounded-full blur-xl"></div>
+                    <div className="relative w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
+                      <svg className="w-12 h-12 text-white animate-float" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">Medical Image Analysis</h2>
+                    <p className="text-gray-600 dark:text-gray-300 max-w-md animate-fade-in">Select an image from the gallery to begin advanced medical analysis using our AI-powered segmentation technology.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Loading Screen */}
+            {isLoading && <LoadingScreen />}
+
+            {/* Tooltip */}
+            {currentRegion && showSegmentation && (
+              <div
+                className="fixed z-50 pointer-events-none"
+                style={{
+                  left: `${mousePos.x}px`,
+                  top: `${mousePos.y}px`,
+                }}
+              >
+                <ReportTooltip type={currentRegion.type as "mass" | "axilla" | "calcification" | "breast tissue"} data={currentRegion.report} />
+              </div>
+            )}
+
+            {/* Opacity Slider */}
+            {showSegmentation && (
+              <div className="absolute top-4 right-4 bg-white/10 backdrop-blur-md p-4 rounded-lg shadow-lg z-30 border border-white/20">
+                <div className="flex flex-col items-center gap-3">
+                  <Layers className="w-5 h-5 text-cyan-700 dark:text-cyan-400" />
+                  <div className="h-32 flex items-center">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={opacity}
+                      onChange={(e) => setOpacity(parseFloat(e.target.value))}
+                      className="rotate-90 
+                        appearance-none bg-gradient-to-t from-cyan-700/20 dark:from-cyan-400/20 to-cyan-700/5 dark:to-cyan-400/5
+                        rounded-lg overflow-hidden w-32
+                        [&::-webkit-slider-thumb]:w-4
+                        [&::-webkit-slider-thumb]:h-4
+                        [&::-webkit-slider-thumb]:appearance-none
+                        [&::-webkit-slider-thumb]:bg-cyan-700
+                        [&::-webkit-slider-thumb]:dark:bg-cyan-400
+                        [&::-webkit-slider-thumb]:rounded-full
+                        [&::-webkit-slider-thumb]:border-4
+                        [&::-webkit-slider-thumb]:border-white/20
+                        [&::-webkit-slider-thumb]:cursor-pointer
+                        [&::-webkit-slider-thumb]:shadow-lg
+                        [&::-webkit-slider-thumb]:shadow-cyan-700/30
+                        [&::-webkit-slider-thumb]:dark:shadow-cyan-400/30
+                        [&::-webkit-slider-thumb]:transition-all
+                        [&::-webkit-slider-thumb]:hover:scale-110"
+                    />
+                  </div>
+                  <span className="text-xs text-cyan-700 dark:text-cyan-400 font-medium text-center">
+                    Slide down to view
+                    <br />
+                    input image
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Right Section - Analysis Controls and Report */}
-        <div className="lg:col-span-1 space-y-6 sticky top-6 self-start max-h-[calc(100vh-3rem)] overflow-y-auto">
+        {/* Right Column - Analysis Controls and Report */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg overflow-y-auto">
           {/* Analysis Button - Show when image selected but not analyzed */}
           {selectedImage && !showSegmentation && (
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
+            <div className="mb-4">
               <h3 className="text-lg font-semibold mb-4">Image Analysis</h3>
-              <button onClick={handlePredict} disabled={isLoading} className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
+              <button 
+                onClick={handlePredict} 
+                disabled={isLoading} 
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
                 {isLoading ? "Analyzing..." : "Analyze Image"}
               </button>
             </div>
@@ -325,7 +332,10 @@ const ImageSegmentation: React.FC = () => {
           {showSegmentation && currentReport && (
             <>
               <MedicalReport report={currentReport} activeSection={activeSection} />
-              <button onClick={() => setIsComparisonModalOpen(true)} className="w-full text-lg px-6 py-3 border border-green-700 hover:border-green-700 bg-green-700 hover:dark:bg-gray-800 hover:dark:text-white text-white rounded-lg hover:bg-white hover:text-green-700 transition-colors">
+              <button 
+                onClick={() => setIsComparisonModalOpen(true)} 
+                className="w-full text-lg px-6 py-3 mt-6 border border-green-700 hover:border-green-700 bg-green-700 hover:dark:bg-gray-800 hover:dark:text-white text-white rounded-lg hover:bg-white hover:text-green-700 transition-colors"
+              >
                 Compare with Other Cases
               </button>
             </>
@@ -334,7 +344,13 @@ const ImageSegmentation: React.FC = () => {
       </div>
 
       {/* Comparison Modal */}
-      {currentReport && <ComparisonModal currentReport={currentReport} isOpen={isComparisonModalOpen} onClose={() => setIsComparisonModalOpen(false)} />}
+      {currentReport && (
+        <ComparisonModal 
+          currentReport={currentReport} 
+          isOpen={isComparisonModalOpen} 
+          onClose={() => setIsComparisonModalOpen(false)} 
+        />
+      )}
     </div>
   );
 };
