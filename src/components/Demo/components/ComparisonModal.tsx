@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, X, Layers } from "lucide-react";
 import { imageReports } from "../../../data/reports";
 import { MedicalReport } from "./MedicalReport";
+import jsPDF from 'jspdf';
 
 interface ComparisonModalProps {
   currentReport: (typeof imageReports)[0];
@@ -217,7 +218,11 @@ export const ComparisonModal = ({ currentReport, isOpen, onClose }: ComparisonMo
                 </div>
               </div>
               <div className="overflow-y-auto scrollbar-thin scrollbar-track-white/5 scrollbar-thumb-white/20 hover:scrollbar-thumb-white/30">
-                <MedicalReport report={currentReport} activeSection={null} />
+                <MedicalReport 
+                  report={currentReport} 
+                  activeSection={null} 
+                  onDownloadPDF={() => generatePDF(currentReport)}
+                />
               </div>
             </div>
 

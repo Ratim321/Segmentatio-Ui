@@ -3,6 +3,42 @@ import { Download, ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { ThemeContext } from "../../../context/ThemeContext";
 import { REGION_COLOR_MAP } from "../../../lib/constants";
+// Add this after the imports
+const PDFGenerator = {
+  createInfoRow: (doc: jsPDF, label: string, value: string, x: number, y: number) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text(label + ":", x, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(value, x + 60, y);
+    return y + 10;
+  },
+
+  createTable: (doc: jsPDF, headers: string[], rows: string[][], startY: number, margin: number, width: number) => {
+    const cellPadding = 5;
+    const lineHeight = 10;
+    const colWidth = width / headers.length;
+
+    // Draw headers
+    doc.setFont("helvetica", "bold");
+    headers.forEach((header, i) => {
+      doc.text(header, margin + (i * colWidth) + cellPadding, startY);
+    });
+
+    startY += lineHeight;
+    doc.setFont("helvetica", "normal");
+
+    // Draw rows
+    rows.forEach(row => {
+      row.forEach((cell, i) => {
+        doc.text(cell, margin + (i * colWidth) + cellPadding, startY);
+      });
+      startY += lineHeight;
+    });
+
+    return startY;
+  }
+};
 
 interface Finding {
   type: string;
@@ -187,7 +223,16 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
     <div className={`${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} p-6 rounded-lg`}>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Medical Report</h2>
-        <button onClick={downloadPDF} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+        <button
+          onClick={() => downloadPDF()}  // Make sure this is properly bound
+          className={`
+            flex items-center gap-2 px-4 py-2 rounded-lg
+            ${darkMode 
+              ? "bg-gray-800 hover:bg-gray-700 text-white" 
+              : "bg-gray-100 hover:bg-gray-200 text-gray-900"}
+            transition-colors
+          `}
+        >
           <Download className="w-4 h-4" />
           Download PDF
         </button>
