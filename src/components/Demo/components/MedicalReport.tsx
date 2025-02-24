@@ -220,7 +220,19 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
   };
 
   return (
-    <div className={`${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} p-6 rounded-lg`}>
+    <div className={`${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} 
+      p-6 rounded-lg max-h-[600px] overflow-y-auto
+      scrollbar-thin 
+      scrollbar-track-gray-200 
+      dark:scrollbar-track-gray-800
+      scrollbar-thumb-blue-500 
+      dark:scrollbar-thumb-blue-600
+      hover:scrollbar-thumb-blue-600
+      dark:hover:scrollbar-thumb-blue-500
+      [&::-webkit-scrollbar]:w-2
+      [&::-webkit-scrollbar-thumb]:rounded-full
+      [&::-webkit-scrollbar-track]:rounded-full
+    `}>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Medical Report</h2>
         <button

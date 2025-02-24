@@ -31,16 +31,20 @@ export default {
       },
       colors: {
         scrollbar: {
-          track: '#1e293b',
+          track: {
+            DEFAULT: '#1e293b',
+            light: '#f1f5f9'
+          },
           thumb: {
             DEFAULT: '#3b82f6',
-            hover: '#60a5fa'
+            hover: '#60a5fa',
+            light: '#cbd5e1',
+            'light-hover': '#94a3b8'
           }
         }
       }
     }
   },
-  
   plugins: [
     require('tailwind-scrollbar')({ nocompatible: true }),
   ],
