@@ -8,14 +8,15 @@ export default function Main() {
   const { darkMode, setDarkMode } = useTheme();
   const location = useLocation();
   const isHomePage = location.pathname === "/";
+  const isDemo = location.pathname === "/demo";
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors">
-      <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
-      <main className={`flex-grow ${!isHomePage ? "pt-16" : ""}`}>
+      {!isDemo && <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />}
+      <main className={`flex-grow ${!isHomePage && !isDemo ? "pt-16" : ""}`}>
         <Outlet />
       </main>
-      <Footer />
+      {!isDemo && <Footer />}
     </div>
   );
 }

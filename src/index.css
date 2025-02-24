@@ -22,6 +22,28 @@
   }
 }
 
+@keyframes slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 1s ease-out forwards;
 }
@@ -32,6 +54,36 @@
   animation: draw 2s ease-out forwards;
 }
 
+@keyframes slide-left {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-right {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-left {
+  animation: slide-left 0.5s ease-out forwards;
+}
+
+.animate-slide-right {
+  animation: slide-right 0.5s ease-out forwards;
+}
+
 .scale-102 {
   transform: scale(1.02);
 }
@@ -39,11 +91,6 @@
 html {
   scroll-behavior: smooth;
 }
-
-/* 
-  By default, we've set text-gray-900 for light mode. 
-  Below you can add dark variant classes or custom rules for dark mode.
-*/
 
 body {
   @apply antialiased text-gray-900 bg-gray-50 dark:bg-gray-900 dark:text-gray-100;
@@ -55,4 +102,31 @@ body {
   --safe-color: #22c55e;
   --target-color: #a855f7;
   --review-color: #f97316;
+}
+
+.bg-grid-pattern {
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+.bg-grid-gray-900 {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(15 23 42 / 0.04)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
 }
