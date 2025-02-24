@@ -1,189 +1,293 @@
-import React, { useState } from 'react';
-import { Download, ChevronDown, ChevronUp } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-import { ImageReport } from '../../../types/reports';
+import React, { useState, useContext, useEffect } from "react";
+import { Download, ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
+import { jsPDF } from "jspdf";
+import { ThemeContext } from "../../../context/ThemeContext";
+import { REGION_COLOR_MAP } from "../../../lib/constants";
+// Add this after the imports
+const PDFGenerator = {
+  createInfoRow: (doc: jsPDF, label: string, value: string, x: number, y: number) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text(label + ":", x, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(value, x + 60, y);
+    return y + 10;
+  },
 
-interface MedicalReportProps {
-  activeSection: string | null;
-  report: ImageReport | null;
+  createTable: (doc: jsPDF, headers: string[], rows: string[][], startY: number, margin: number, width: number) => {
+    const cellPadding = 5;
+    const lineHeight = 10;
+    const colWidth = width / headers.length;
+
+    // Draw headers
+    doc.setFont("helvetica", "bold");
+    headers.forEach((header, i) => {
+      doc.text(header, margin + (i * colWidth) + cellPadding, startY);
+    });
+
+    startY += lineHeight;
+    doc.setFont("helvetica", "normal");
+
+    // Draw rows
+    rows.forEach(row => {
+      row.forEach((cell, i) => {
+        doc.text(cell, margin + (i * colWidth) + cellPadding, startY);
+      });
+      startY += lineHeight;
+    });
+
+    return startY;
+  }
+};
+
+interface Finding {
+  type: string;
+  found: number;
+  confidence?: number;
+  [key: string]: any;
 }
 
-export const MedicalReport: React.FC<MedicalReportProps> = ({ activeSection, report }) => {
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-
-  if (!report) return null;
-
-  const toggleSection = (section: string) => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
+interface MedicalReportProps {
+  report: {
+    id: string;
+    report: Finding[];
+    BIRADS?: number;
+    comment?: string[];
   };
+  activeSection?: string | null;
+}
 
-  const getHighlightClass = (section: string) => {
-    return activeSection === section
-      ? 'bg-gray-800/50 border-l-4 border-blue-500'
-      : '';
+const FindingSection: React.FC<{
+  finding: Finding;
+  index: number;
+  isExpanded: boolean;
+  isActive: boolean;
+  darkMode: boolean;
+  onToggle: () => void;
+}> = ({ finding, index, isExpanded, isActive, darkMode, onToggle }) => {
+  return (
+    <div
+      className={`
+        ${darkMode ? "border-gray-700" : "border-gray-200"} 
+        border rounded-lg overflow-hidden
+        ${isActive ? "ring-2 ring-yellow-400" : ""}
+        transition-all duration-300
+      `}
+    >
+      <button
+        onClick={onToggle}
+        className={`w-full flex items-center gap-3 p-4 
+          ${darkMode ? "hover:bg-gray-800" : "hover:bg-gray-50"} 
+          transition-colors`}
+      >
+        <div
+          className="w-1.5 h-12 rounded-full"
+          style={{
+            backgroundColor: REGION_COLOR_MAP[finding.type as keyof typeof REGION_COLOR_MAP] || "#666",
+          }}
+        />
+        <div className="flex-1 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div>
+              <h4 className="font-medium text-left capitalize">{finding.type}</h4>
+              <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Click to view details</p>
+            </div>
+            {finding.confidence && <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-md text-sm font-medium">{finding.confidence.toFixed(1)}%</span>}
+          </div>
+          {isExpanded ? <ChevronDown className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-500"}`} /> : <ChevronRight className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-500"}`} />}
+        </div>
+      </button>
+      {isExpanded && (
+        <div className={`px-4 pb-4 pt-2 ${darkMode ? "bg-gray-800/50" : "bg-gray-50/50"}`}>
+          <div className="space-y-2 pl-8">
+            {finding.type === "axilla" ? (
+              <p className={darkMode ? "text-gray-300" : "text-gray-600"}>
+                <span className={darkMode ? "text-gray-400" : "text-gray-500"}>Type:</span> {finding.axilla_type}
+              </p>
+            ) : (
+              Object.entries(finding).map(([key, value]) => {
+                if (key !== "type" && key !== "found" && key !== "confidence") {
+                  return (
+                    <p key={key} className={darkMode ? "text-gray-300" : "text-gray-600"}>
+                      <span className={darkMode ? "text-gray-400" : "text-gray-500"}>{key.replace(/_/g, " ")}:</span> {value}
+                    </p>
+                  );
+                }
+                return null;
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSection }) => {
+  const { darkMode } = useContext(ThemeContext);
+  const [expandedSections, setExpandedSections] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (activeSection) {
+      const sectionIndex = report.report.findIndex((finding) => finding.type === activeSection);
+      if (sectionIndex !== -1 && !expandedSections.includes(sectionIndex)) {
+        setExpandedSections((prev) => [...prev, sectionIndex]);
+      }
+    }
+  }, [activeSection, report.report, expandedSections]);
+
+  const toggleSection = (index: number) => {
+    setExpandedSections((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]));
   };
 
   const downloadPDF = () => {
     const doc = new jsPDF();
-    
-    // Set up fonts and colors
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(24);
-    doc.setTextColor(44, 62, 80);
-    
-    // Header
-    doc.text("Medical Report", 20, 20);
-    doc.setFontSize(12);
-    doc.setTextColor(127, 140, 141);
-    doc.text(new Date().toLocaleString(), 20, 30);
-    
-    // Horizontal line
-    doc.setDrawColor(236, 240, 241);
-    doc.line(20, 35, 190, 35);
-    
-    // Key Findings Section
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(44, 62, 80);
-    doc.text("Key Findings", 20, 45);
-    
-    let yPos = 55;
-    
-    // Findings details
-    report.report.forEach(finding => {
-      if (finding.found) {
-        // Section title with confidence
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(14);
-        doc.setTextColor(52, 73, 94);
-        doc.text(`${finding.type.toUpperCase()} (92% confidence)`, 20, yPos);
-        yPos += 10;
-        
-        // Finding details
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(12);
-        doc.setTextColor(44, 62, 80);
-        
-        Object.entries(finding).forEach(([key, value]) => {
-          if (key !== 'type' && key !== 'found') {
-            const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            doc.text(`${formattedKey}: ${value}`, 30, yPos);
-            yPos += 8;
-          }
-        });
-        
-        yPos += 5;
-      }
-    });
-    
-    // Analysis Summary
-    yPos += 10;
-    doc.setDrawColor(236, 240, 241);
-    doc.line(20, yPos, 190, yPos);
-    yPos += 10;
-    
+    const margin = 20;
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
+    const contentWidth = pageWidth - 2 * margin;
+    let y = 30;
+
+    // Patient Information
+    let leftY = y;
+    leftY = PDFGenerator.createInfoRow(doc, "ID No", report.id, margin, leftY);
+    leftY = PDFGenerator.createInfoRow(doc, "PATIENT NAME", "Patient", margin, leftY);
+    leftY = PDFGenerator.createInfoRow(doc, "PART OF EXAM", "MAMMOGRAPHY OF BOTH BREAST", margin, leftY);
+
+    // Right column info
+    let rightY = y;
+    const rightColX = pageWidth - margin - 80;
+    rightY = PDFGenerator.createInfoRow(doc, "DATE", new Date().toLocaleDateString(), rightColX, rightY);
+    rightY = PDFGenerator.createInfoRow(doc, "SEX", "FEMALE", rightColX, rightY);
+    rightY = PDFGenerator.createInfoRow(doc, "AGE", "N/A", rightColX, rightY);
+
+    // Title
+    y = Math.max(leftY, rightY) + 20;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
-    doc.setTextColor(41, 128, 185);
-    doc.text("Analysis Summary", 20, yPos);
-    yPos += 8;
-    
-    doc.setFont("helvetica", "normal");
+    doc.text("MAMMOGRAPHY REPORT OF BOTH BREASTS", pageWidth / 2, y, { align: "center" });
+
+    y += 20;
     doc.setFontSize(12);
-    doc.setTextColor(44, 62, 80);
-    doc.text("Findings suggest further investigation may be required.", 20, yPos);
-    yPos += 6;
-    doc.text("Recommend follow-up imaging in 6 months.", 20, yPos);
-    
+
+    // Mass findings table
+    const massFindings = report.report.find((f) => f.type === "mass" && f.found);
+    if (massFindings) {
+      doc.setFont("helvetica", "bold");
+      doc.text("Lesion type: Mass", margin, y);
+      y += 15;
+
+      const headers = ["Parameter", "Right Breast", "Left Breast"];
+      const rows = [
+        ["Number of lesion", "-", massFindings.number_of_lesions || "-"],
+        ["Measurement", "-", massFindings.measurement || "-"],
+        ["Shape", "-", massFindings.shape || "-"],
+        ["Margins", "-", massFindings.margins || "-"],
+        ["Density", "-", massFindings.density || "-"],
+      ];
+
+      y = PDFGenerator.createTable(doc, headers, rows, y, margin, contentWidth);
+    }
+
+    // Lymph node findings
+    const axillaFindings = report.report.find((f) => f.type === "axilla" && f.found);
+    if (axillaFindings) {
+      y += 15;
+      doc.setFont("helvetica", "bold");
+      doc.text("Lymph node", margin, y);
+      y += 15;
+
+      const headers = ["Location", "Findings"];
+      const rows = [
+        ["Right axilla", "Multiple with fatty hilum"],
+        ["Left axilla", "Multiple with fatty hilum"],
+      ];
+
+      y = PDFGenerator.createTable(doc, headers, rows, y, margin, contentWidth);
+    }
+
     // Footer
-    const pageHeight = doc.internal.pageSize.height;
+    y += 25;
     doc.setFont("helvetica", "italic");
     doc.setFontSize(10);
-    doc.setTextColor(127, 140, 141);
-    doc.text("Generated by MedSegAI", 20, pageHeight - 20);
-    doc.text(new Date().toLocaleDateString(), doc.internal.pageSize.width - 40, pageHeight - 20);
-    
-    // Save the PDF
-    doc.save(`medical-report-${report.id}-${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.text("This report is generated automatically and should be reviewed by a qualified medical professional.", margin, y);
+
+    // Page numbers
+    doc.setFont("helvetica", "normal");
+    doc.text(`Page 1 of 1`, pageWidth - margin, pageHeight - 10, { align: "right" });
+
+    doc.save(`medical-report-${report.id}.pdf`);
   };
 
   return (
-    <div className="sticky top-24 bg-gray-900 text-gray-100 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className={`${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} p-6 rounded-lg`}>
+      <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Medical Report</h2>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-400">
-            {new Date().toLocaleString()}
-          </span>
-          <button
-            onClick={downloadPDF}
-            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            PDF Report
-          </button>
-        </div>
+        <button
+          onClick={() => downloadPDF()}  // Make sure this is properly bound
+          className={`
+            flex items-center gap-2 px-4 py-2 rounded-lg
+            ${darkMode 
+              ? "bg-gray-800 hover:bg-gray-700 text-white" 
+              : "bg-gray-100 hover:bg-gray-200 text-gray-900"}
+            transition-colors
+          `}
+        >
+          <Download className="w-4 h-4" />
+          Download PDF
+        </button>
       </div>
-
-      <div className="space-y-2">
-        <h3 className="text-lg font-medium mb-4">Key Findings</h3>
-        
-        {report.report.map((finding, index) => (
-          finding.found ? (
-            <div
-              key={index}
-              className={`
-                transition-all duration-300 ease-out
-                ${getHighlightClass(finding.type)}
-              `}
-            >
-              <button
-                onClick={() => toggleSection(finding.type)}
-                className="w-full flex items-center justify-between p-3 hover:bg-gray-800/30 rounded-lg"
-              >
-                <div className="flex items-center gap-2">
-                  {expandedSections[finding.type] ? (
-                    <ChevronUp className="w-4 h-4 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                  )}
-                  <span className="capitalize">{finding.type}</span>
-                </div>
-                <span className="text-sm text-amber-500">
-                  92% confidence
-                </span>
-              </button>
-
-              {expandedSections[finding.type] && (
-                <div className="px-4 py-3 space-y-2 text-sm text-gray-300 bg-gray-800/20 rounded-lg mt-1 mb-2">
-                  {Object.entries(finding).map(([key, value]) => {
-                    if (key !== 'type' && key !== 'found') {
-                      return (
-                        <p key={key} className="flex justify-between">
-                          <span className="capitalize">{key.replace(/_/g, ' ')}:</span>
-                          <span className="text-gray-100">{value}</span>
-                        </p>
-                      );
-                    }
-                    return null;
-                  })}
-                </div>
-              )}
-            </div>
-          ) : null
+      
+      <div className="space-y-4">
+        {report.report.map((finding, index) => finding.found === 1 && (
+          <FindingSection 
+            key={index} 
+            finding={finding} 
+            index={index} 
+            isExpanded={expandedSections.includes(index)} 
+            isActive={activeSection === finding.type} 
+            darkMode={darkMode} 
+            onToggle={() => toggleSection(index)} 
+          />
         ))}
 
-        <div className="mt-8 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
-          <h4 className="text-sm font-medium text-blue-400 mb-2">
-            Analysis Summary
-          </h4>
-          <p className="text-sm text-gray-300">
-            Findings suggest further investigation may be required. Recommend follow-up imaging in 6 months.
-          </p>
-        </div>
+        {/* BIRADS and Comments Section */}
+        {report.BIRADS && (
+          <div className={`
+            mt-8 pt-6 border-t
+            ${darkMode ? "border-gray-700" : "border-gray-200"}
+          `}>
+            <div className="flex items-start gap-3">
+              <AlertCircle className={`w-5 h-5 mt-0.5 ${report.BIRADS >= 4 ? "text-red-500" : "text-yellow-500"}`} />
+              <div>
+                <h3 className="text-lg font-medium mb-2">Assessment</h3>
+                <div className="space-y-4">
+                  <div className={`
+                    inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                    ${report.BIRADS >= 4 
+                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" 
+                      : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"}
+                  `}>
+                    BIRADS Category {report.BIRADS}
+                  </div>
+                  
+                  {report.comment && report.comment.length > 0 && (
+                    <div className="space-y-2">
+                      {report.comment.map((comment, index) => (
+                        <p key={index} className={`
+                          text-sm pl-4 border-l-2
+                          ${darkMode ? "text-gray-300 border-gray-700" : "text-gray-600 border-gray-200"}
+                        `}>
+                          {comment}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

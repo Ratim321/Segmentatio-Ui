@@ -3,11 +3,8 @@ import ImageSegmentation from '../components/Demo/components/ImageSegmentation';
 
 const Demo = () => {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900 dark:text-gray-100">
-        Image Segmentation Analysis
-      </h1>
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg">
+    <div className="h-[calc(100vh-4rem)]">
+      <div className="h-full">
         <ImageSegmentation />
       </div>
     </div>

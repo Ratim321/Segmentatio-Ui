@@ -10,19 +10,23 @@ export const transformReport = (reportData: RegionData) => {
         type: "mass",
         color: REGION_COLOR_MAP.mass,
         report: {
+          confidence: reportData.confidence,
           definition: reportData.definition,
           density: reportData.density,
-          shape: reportData.shape
+          shape: reportData.shape,
+          mass_calcification: reportData.mass_calcification,
+          measurement: reportData.measurement
         } as MassReport
       };
 
-    case "axillia":
+    case "axilla":
       if (!reportData.found) return null;
       return {
         type: "axilla",
-        color: REGION_COLOR_MAP.axillia,
+        color: REGION_COLOR_MAP.axilla,
         report: {
-          findings: true
+          confidence: reportData.confidence,
+          axilla_type: reportData.axilla_type
         } as AxillaReport
       };
 
@@ -32,17 +36,19 @@ export const transformReport = (reportData: RegionData) => {
         type: "calcification",
         color: REGION_COLOR_MAP.calcification,
         report: {
-          type: reportData.calcification_type
+          confidence: reportData.confidence,
+          calcification_type: reportData.calcification_type
         } as CalcificationReport
       };
 
     case "breast tissue":
       if (!reportData.found) return null;
       return {
-        type: "breastTissue",
+        type: "breast tissue",
         color: REGION_COLOR_MAP["breast tissue"],
         report: {
-          density: reportData.breast_density
+          confidence: reportData.confidence,
+          breast_density: reportData.breast_density
         } as BreastTissueReport
       };
   }
