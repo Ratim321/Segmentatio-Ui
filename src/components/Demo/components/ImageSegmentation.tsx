@@ -61,6 +61,7 @@ const LoadingScreen: React.FC = () => (
 const ImageSegmentation: React.FC = () => {
   const inputCanvasRef = useRef<HTMLCanvasElement>(null);
   const outputCanvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentReport, setCurrentReport] = useState<ImageReport | null>(null);
   const [showSegmentation, setShowSegmentation] = useState(false);
@@ -99,9 +100,17 @@ const ImageSegmentation: React.FC = () => {
       const ctx = inputCanvas.getContext("2d");
       if (!ctx) return;
 
+      // Set canvas dimensions to match the image
       inputCanvas.width = img.width;
       inputCanvas.height = img.height;
       ctx.drawImage(img, 0, 0);
+
+      // Adjust container height to maintain aspect ratio
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        const aspectRatio = img.height / img.width;
+        containerRef.current.style.height = `${containerWidth * aspectRatio}px`;
+      }
     };
   };
 
@@ -188,20 +197,18 @@ const ImageSegmentation: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col p-6">
-      <h1></h1>
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Section - Gallery and Image Display */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 flex flex-col">
           <Gallery images={imageReports.map((r) => r.input_img)} selectedImage={selectedImage} onImageSelect={handleImageSelect} onFileUpload={handleFileUpload} />
 
-          <div className="relative mt-4">
-            <div className="relative h-[80vh]" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+          <div className="relative flex-1 mt-6" ref={containerRef}>
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-800/50 rounded-lg overflow-hidden" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
               {/* Input Image Layer */}
               <canvas
                 ref={inputCanvasRef}
                 className={`
-                  absolute top-0 left-0 z-20
-                  h-full w-auto
+                  absolute w-full h-full object-contain
                   dark:border-gray-700 rounded-lg 
                   ${showSegmentation ? "cursor-crosshair" : "cursor-default"}
                   transition-all duration-300
@@ -213,7 +220,7 @@ const ImageSegmentation: React.FC = () => {
               <canvas
                 ref={outputCanvasRef}
                 className={`
-                  h-full w-auto
+                  w-full h-full object-contain
                   dark:border-gray-700 rounded-lg 
                   ${showSegmentation ? "cursor-crosshair" : "cursor-default"}
                   transition-all duration-300
@@ -222,15 +229,12 @@ const ImageSegmentation: React.FC = () => {
 
               {/* Placeholder Hero Section */}
               {!selectedImage && (
-                <div className="absolute inset-0 w-auto flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg overflow-hidden">
-                  {/* Animated Background Pattern */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg overflow-hidden">
                   <div className="absolute inset-0 opacity-10">
                     <div className="absolute inset-0 bg-grid-gray-900/30 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
                   </div>
 
-                  {/* Main Content */}
                   <div className="relative flex flex-col items-center text-center p-8 space-y-6 max-w-2xl mx-auto">
-                    {/* Icon */}
                     <div className="relative">
                       <div className="absolute inset-0 animate-pulse bg-cyan-500/20 rounded-full blur-xl"></div>
                       <div className="relative w-24 h-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg">
@@ -240,10 +244,9 @@ const ImageSegmentation: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Text Content */}
                     <div className="space-y-4">
                       <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">Medical Image Analysis</h2>
-                      <p className="text-gray-600 dark:text-gray-300 max-w-md animate-fade-in">Select an image from the gallery above to begin advanced medical analysis using our AI-powered segmentation technology.</p>
+                      <p className="text-gray-300 max-w-md animate-fade-in">Select an image from the gallery above to begin advanced medical analysis using our AI-powered segmentation technology.</p>
                     </div>
                   </div>
                 </div>
