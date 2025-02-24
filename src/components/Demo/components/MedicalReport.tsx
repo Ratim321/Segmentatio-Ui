@@ -22,22 +22,22 @@ const PDFGenerator = {
     // Draw headers
     doc.setFont("helvetica", "bold");
     headers.forEach((header, i) => {
-      doc.text(header, margin + (i * colWidth) + cellPadding, startY);
+      doc.text(header, margin + i * colWidth + cellPadding, startY);
     });
 
     startY += lineHeight;
     doc.setFont("helvetica", "normal");
 
     // Draw rows
-    rows.forEach(row => {
+    rows.forEach((row) => {
       row.forEach((cell, i) => {
-        doc.text(cell, margin + (i * colWidth) + cellPadding, startY);
+        doc.text(cell, margin + i * colWidth + cellPadding, startY);
       });
       startY += lineHeight;
     });
 
     return startY;
-  }
+  },
 };
 
 interface Finding {
@@ -220,7 +220,8 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
   };
 
   return (
-    <div className={`${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} 
+    <div
+      className={`${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} 
       p-6 rounded-lg max-h-[600px] overflow-y-auto
       scrollbar-thin 
       scrollbar-track-gray-200 
@@ -232,16 +233,15 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
       [&::-webkit-scrollbar]:w-2
       [&::-webkit-scrollbar-thumb]:rounded-full
       [&::-webkit-scrollbar-track]:rounded-full
-    `}>
+    `}
+    >
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Medical Report</h2>
         <button
-          onClick={() => downloadPDF()}  // Make sure this is properly bound
+          onClick={() => downloadPDF()} // Make sure this is properly bound
           className={`
             flex items-center gap-2 px-4 py-2 rounded-lg
-            ${darkMode 
-              ? "bg-gray-800 hover:bg-gray-700 text-white" 
-              : "bg-gray-100 hover:bg-gray-200 text-gray-900"}
+            ${darkMode ? "bg-gray-800 hover:bg-gray-700 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900"}
             transition-colors
           `}
         >
@@ -249,47 +249,42 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
           Download PDF
         </button>
       </div>
-      
+
       <div className="space-y-4">
-        {report.report.map((finding, index) => finding.found === 1 && (
-          <FindingSection 
-            key={index} 
-            finding={finding} 
-            index={index} 
-            isExpanded={expandedSections.includes(index)} 
-            isActive={activeSection === finding.type} 
-            darkMode={darkMode} 
-            onToggle={() => toggleSection(index)} 
-          />
-        ))}
+        {report.report.map((finding, index) => finding.found === 1 && <FindingSection key={index} finding={finding} index={index} isExpanded={expandedSections.includes(index)} isActive={activeSection === finding.type} darkMode={darkMode} onToggle={() => toggleSection(index)} />)}
 
         {/* BIRADS and Comments Section */}
         {report.BIRADS && (
-          <div className={`
+          <div
+            className={`
             mt-8 pt-6 border-t
             ${darkMode ? "border-gray-700" : "border-gray-200"}
-          `}>
-            <div className="flex items-start gap-3">
-              <AlertCircle className={`w-5 h-5 mt-0.5 ${report.BIRADS >= 4 ? "text-red-500" : "text-yellow-500"}`} />
+          `}
+          >
+            <div className="flex items-start  gap-3">
+              <AlertCircle className={`w-5 h-5 mt-1 ${report.BIRADS >= 4 ? "text-red-500" : "text-yellow-500"}`} />
               <div>
                 <h3 className="text-lg font-medium mb-2">Assessment</h3>
                 <div className="space-y-4">
-                  <div className={`
+                  <div
+                    className={`
                     inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                    ${report.BIRADS >= 4 
-                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" 
-                      : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"}
-                  `}>
+                    ${report.BIRADS >= 4 ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"}
+                  `}
+                  >
                     BIRADS Category {report.BIRADS}
                   </div>
-                  
+
                   {report.comment && report.comment.length > 0 && (
                     <div className="space-y-2">
                       {report.comment.map((comment, index) => (
-                        <p key={index} className={`
+                        <p
+                          key={index}
+                          className={`
                           text-sm pl-4 border-l-2
                           ${darkMode ? "text-gray-300 border-gray-700" : "text-gray-600 border-gray-200"}
-                        `}>
+                        `}
+                        >
                           {comment}
                         </p>
                       ))}
