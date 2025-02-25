@@ -15,7 +15,7 @@ export const imageReports: ImageReport[] = [
         definition: "Well-defined",
         density: "Iso-dense/ Equal Dense",
         shape: "Oval",
-        measurement: "40mm x 28mm",
+        measurement: "40 mm x 28 mm",
         mass_calcification: "No",
       },
       {
@@ -52,7 +52,7 @@ export const imageReports: ImageReport[] = [
         definition: "Well-defined",
         density: "Iso-dense/ Equal Dense",
         shape: "Rounded",
-        measurement: "12mm x 12mm",
+        measurement: "12 mm x 12 mm",
         mass_calcification: "Yes",
       },
       {
@@ -88,7 +88,7 @@ export const imageReports: ImageReport[] = [
         definition: "Ill-defined",
         density: "Iso-dense/ Equal Dense",
         shape: "Oval",
-        measurement: "22mm x 19mm",
+        measurement: "22 mm x 19 mm",
         mass_calcification: "No",
       },
       {
