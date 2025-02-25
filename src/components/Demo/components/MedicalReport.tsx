@@ -3,14 +3,14 @@ import { Download, ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { ThemeContext } from "../../../context/ThemeContext";
 import { REGION_COLOR_MAP } from "../../../lib/constants";
-// Add this after the imports
+
 const PDFGenerator = {
   createInfoRow: (doc: jsPDF, label: string, value: any, x: number, y: number) => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.text(label + ":", x, y);
     doc.setFont("helvetica", "normal");
-    doc.text(String(value), x + 30, y); // Changed from x + 60 to x + 30
+    doc.text(String(value), x + 30, y);
     return y + 10;
   },
 
@@ -19,19 +19,17 @@ const PDFGenerator = {
     const lineHeight = 10;
     const colWidth = width / headers.length;
 
-    // Draw headers
     doc.setFont("helvetica", "bold");
     headers.forEach((header, i) => {
-      doc.text(String(header), margin + i * colWidth + cellPadding, startY); // Convert header to string
+      doc.text(String(header), margin + i * colWidth + cellPadding, startY);
     });
 
     startY += lineHeight;
     doc.setFont("helvetica", "normal");
 
-    // Draw rows
     rows.forEach((row) => {
       row.forEach((cell, i) => {
-        doc.text(String(cell), margin + i * colWidth + cellPadding, startY); // Convert cell to string
+        doc.text(String(cell), margin + i * colWidth + cellPadding, startY);
       });
       startY += lineHeight;
     });
@@ -54,17 +52,15 @@ interface MedicalReportProps {
     BIRADS?: number;
     comment?: string[];
   };
-  activeSection?: string | null;
+  activeSection: string | null;
 }
 
 const FindingSection: React.FC<{
   finding: Finding;
   index: number;
-  isExpanded: boolean;
   isActive: boolean;
   darkMode: boolean;
-  onToggle: () => void;
-}> = ({ finding, index, isExpanded, isActive, darkMode, onToggle }) => {
+}> = ({ finding, index, isActive, darkMode }) => {
   return (
     <div
       className={`
@@ -74,10 +70,9 @@ const FindingSection: React.FC<{
         transition-all duration-300
       `}
     >
-      <button
-        onClick={onToggle}
+      <div
         className={`w-full flex items-center gap-3 p-4 
-          ${darkMode ? "hover:bg-gray-800" : "hover:bg-gray-50"} 
+          ${darkMode ? "bg-gray-800/50" : "bg-gray-50/50"}
           transition-colors`}
       >
         <div
@@ -90,14 +85,17 @@ const FindingSection: React.FC<{
           <div className="flex items-center gap-4">
             <div>
               <h4 className="font-medium text-left capitalize">{finding.type}</h4>
-              <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Click to view details</p>
+              <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Hover over region to view details</p>
             </div>
-            {finding.confidence && <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-md text-sm font-medium">{finding.confidence.toFixed(1)}%</span>}
+            {finding.confidence && (
+              <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-md text-sm font-medium">
+                {finding.confidence.toFixed(1)}%
+              </span>
+            )}
           </div>
-          {isExpanded ? <ChevronDown className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-500"}`} /> : <ChevronRight className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-500"}`} />}
         </div>
-      </button>
-      {isExpanded && (
+      </div>
+      {isActive && (
         <div className={`px-4 pb-4 pt-2 ${darkMode ? "bg-gray-800/50" : "bg-gray-50/50"}`}>
           <div className="space-y-2 pl-8">
             {finding.type === "axilla" ? (
@@ -125,20 +123,7 @@ const FindingSection: React.FC<{
 
 export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSection }) => {
   const { darkMode } = useContext(ThemeContext);
-  const [expandedSections, setExpandedSections] = useState<number[]>([]);
-
-  useEffect(() => {
-    if (activeSection) {
-      const sectionIndex = report.report.findIndex((finding) => finding.type === activeSection);
-      if (sectionIndex !== -1 && !expandedSections.includes(sectionIndex)) {
-        setExpandedSections((prev) => [...prev, sectionIndex]);
-      }
-    }
-  }, [activeSection, report.report, expandedSections]);
-
-  const toggleSection = (index: number) => {
-    setExpandedSections((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]));
-  };
+  const [expandedBirads, setExpandedBirads] = useState(false);
 
   const downloadPDF = () => {
     try {
@@ -149,20 +134,17 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
       const contentWidth = pageWidth - 2 * margin;
       let y = 30;
 
-      // Patient Information
       let leftY = y;
       leftY = PDFGenerator.createInfoRow(doc, "ID No", report.id, margin, leftY);
       leftY = PDFGenerator.createInfoRow(doc, "PATIENT NAME", "Patient", margin, leftY);
       leftY = PDFGenerator.createInfoRow(doc, "PART OF EXAM", "MAMMOGRAPHY OF BOTH BREAST", margin, leftY);
 
-      // Right column info
       let rightY = y;
       const rightColX = pageWidth - margin - 80;
       rightY = PDFGenerator.createInfoRow(doc, "DATE", new Date().toLocaleDateString(), rightColX, rightY);
       rightY = PDFGenerator.createInfoRow(doc, "SEX", "FEMALE", rightColX, rightY);
       rightY = PDFGenerator.createInfoRow(doc, "AGE", "N/A", rightColX, rightY);
 
-      // Title
       y = Math.max(leftY, rightY) + 20;
       doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
@@ -171,7 +153,6 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
       y += 20;
       doc.setFontSize(12);
 
-      // Mass findings table
       const massFindings = report.report.find((f) => f.type === "mass" && f.found);
       if (massFindings) {
         doc.setFont("helvetica", "bold");
@@ -190,7 +171,6 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
         y = PDFGenerator.createTable(doc, headers, rows, y, margin, contentWidth);
       }
 
-      // Lymph node findings
       const axillaFindings = report.report.find((f) => f.type === "axilla" && f.found);
       if (axillaFindings) {
         y += 15;
@@ -207,22 +187,15 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
         y = PDFGenerator.createTable(doc, headers, rows, y, margin, contentWidth);
       }
 
-      // Footer
       y += 25;
       doc.setFont("helvetica", "italic");
       doc.setFontSize(10);
       doc.text("This report is generated automatically and should be reviewed by a qualified medical professional.", margin, y);
 
-      // Page numbers
       doc.setFont("helvetica", "normal");
       doc.text(`Page 1 of 1`, pageWidth - margin, pageHeight - 10, { align: "right" });
 
-      // Add error handling for the save operation
-      try {
-        doc.save(`medical-report-${report.id}.pdf`);
-      } catch (error) {
-        console.error('Error saving PDF:', error);
-      }
+      doc.save(`medical-report-${report.id}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
     }
@@ -247,7 +220,7 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Medical Report</h2>
         <button
-          onClick={() => downloadPDF()} // Make sure this is properly bound
+          onClick={downloadPDF}
           className={`
             flex items-center gap-2 px-4 py-2 rounded-lg
             ${darkMode 
@@ -262,9 +235,18 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
       </div>
 
       <div className="space-y-4">
-        {report.report.map((finding, index) => finding.found === 1 && <FindingSection key={index} finding={finding} index={index} isExpanded={expandedSections.includes(index)} isActive={activeSection === finding.type} darkMode={darkMode} onToggle={() => toggleSection(index)} />)}
+        {report.report.map((finding, index) => 
+          finding.found === 1 && (
+            <FindingSection 
+              key={index} 
+              finding={finding} 
+              index={index} 
+              isActive={activeSection === finding.type}
+              darkMode={darkMode}
+            />
+          )
+        )}
 
-        {/* BIRADS and Comments Section */}
         {report.BIRADS && (
           <div
             className={`
@@ -272,7 +254,7 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
             ${darkMode ? "border-gray-700" : "border-gray-200"}
           `}
           >
-            <div className="flex items-start  gap-3">
+            <div className="flex items-start gap-3">
               <AlertCircle className={`w-5 h-5 mt-1 ${report.BIRADS >= 4 ? "text-red-500" : "text-yellow-500"}`} />
               <div>
                 <h3 className="text-lg font-medium mb-2">Assessment</h3>
