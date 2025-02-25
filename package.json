@@ -13,7 +13,7 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "chart.js": "^4.4.7",
     "framer-motion": "^12.4.5",
-    "jspdf": "^2.5.2",
+    "jspdf": "^3.0.0",
     "lucide-react": "^0.344.0",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",

@@ -5,12 +5,12 @@ import { ThemeContext } from "../../../context/ThemeContext";
 import { REGION_COLOR_MAP } from "../../../lib/constants";
 // Add this after the imports
 const PDFGenerator = {
-  createInfoRow: (doc: jsPDF, label: string, value: string, x: number, y: number) => {
+  createInfoRow: (doc: jsPDF, label: string, value: any, x: number, y: number) => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.text(label + ":", x, y);
     doc.setFont("helvetica", "normal");
-    doc.text(value, x + 60, y);
+    doc.text(String(value), x + 30, y); // Changed from x + 60 to x + 30
     return y + 10;
   },
 
@@ -22,7 +22,7 @@ const PDFGenerator = {
     // Draw headers
     doc.setFont("helvetica", "bold");
     headers.forEach((header, i) => {
-      doc.text(header, margin + i * colWidth + cellPadding, startY);
+      doc.text(String(header), margin + i * colWidth + cellPadding, startY); // Convert header to string
     });
 
     startY += lineHeight;
@@ -31,7 +31,7 @@ const PDFGenerator = {
     // Draw rows
     rows.forEach((row) => {
       row.forEach((cell, i) => {
-        doc.text(cell, margin + i * colWidth + cellPadding, startY);
+        doc.text(String(cell), margin + i * colWidth + cellPadding, startY); // Convert cell to string
       });
       startY += lineHeight;
     });
@@ -141,82 +141,91 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
   };
 
   const downloadPDF = () => {
-    const doc = new jsPDF();
-    const margin = 20;
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
-    const contentWidth = pageWidth - 2 * margin;
-    let y = 30;
+    try {
+      const doc = new jsPDF();
+      const margin = 20;
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      const contentWidth = pageWidth - 2 * margin;
+      let y = 30;
 
-    // Patient Information
-    let leftY = y;
-    leftY = PDFGenerator.createInfoRow(doc, "ID No", report.id, margin, leftY);
-    leftY = PDFGenerator.createInfoRow(doc, "PATIENT NAME", "Patient", margin, leftY);
-    leftY = PDFGenerator.createInfoRow(doc, "PART OF EXAM", "MAMMOGRAPHY OF BOTH BREAST", margin, leftY);
+      // Patient Information
+      let leftY = y;
+      leftY = PDFGenerator.createInfoRow(doc, "ID No", report.id, margin, leftY);
+      leftY = PDFGenerator.createInfoRow(doc, "PATIENT NAME", "Patient", margin, leftY);
+      leftY = PDFGenerator.createInfoRow(doc, "PART OF EXAM", "MAMMOGRAPHY OF BOTH BREAST", margin, leftY);
 
-    // Right column info
-    let rightY = y;
-    const rightColX = pageWidth - margin - 80;
-    rightY = PDFGenerator.createInfoRow(doc, "DATE", new Date().toLocaleDateString(), rightColX, rightY);
-    rightY = PDFGenerator.createInfoRow(doc, "SEX", "FEMALE", rightColX, rightY);
-    rightY = PDFGenerator.createInfoRow(doc, "AGE", "N/A", rightColX, rightY);
+      // Right column info
+      let rightY = y;
+      const rightColX = pageWidth - margin - 80;
+      rightY = PDFGenerator.createInfoRow(doc, "DATE", new Date().toLocaleDateString(), rightColX, rightY);
+      rightY = PDFGenerator.createInfoRow(doc, "SEX", "FEMALE", rightColX, rightY);
+      rightY = PDFGenerator.createInfoRow(doc, "AGE", "N/A", rightColX, rightY);
 
-    // Title
-    y = Math.max(leftY, rightY) + 20;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text("MAMMOGRAPHY REPORT OF BOTH BREASTS", pageWidth / 2, y, { align: "center" });
-
-    y += 20;
-    doc.setFontSize(12);
-
-    // Mass findings table
-    const massFindings = report.report.find((f) => f.type === "mass" && f.found);
-    if (massFindings) {
+      // Title
+      y = Math.max(leftY, rightY) + 20;
       doc.setFont("helvetica", "bold");
-      doc.text("Lesion type: Mass", margin, y);
-      y += 15;
+      doc.setFontSize(14);
+      doc.text("MAMMOGRAPHY REPORT OF BOTH BREASTS", pageWidth / 2, y, { align: "center" });
 
-      const headers = ["Parameter", "Right Breast", "Left Breast"];
-      const rows = [
-        ["Number of lesion", "-", massFindings.number_of_lesions || "-"],
-        ["Measurement", "-", massFindings.measurement || "-"],
-        ["Shape", "-", massFindings.shape || "-"],
-        ["Margins", "-", massFindings.margins || "-"],
-        ["Density", "-", massFindings.density || "-"],
-      ];
+      y += 20;
+      doc.setFontSize(12);
 
-      y = PDFGenerator.createTable(doc, headers, rows, y, margin, contentWidth);
+      // Mass findings table
+      const massFindings = report.report.find((f) => f.type === "mass" && f.found);
+      if (massFindings) {
+        doc.setFont("helvetica", "bold");
+        doc.text("Lesion type: Mass", margin, y);
+        y += 15;
+
+        const headers = ["Parameter", "Right Breast", "Left Breast"];
+        const rows = [
+          ["Number of lesion", "-", massFindings.number_of_lesions || "-"],
+          ["Measurement", "-", massFindings.measurement || "-"],
+          ["Shape", "-", massFindings.shape || "-"],
+          ["Margins", "-", massFindings.margins || "-"],
+          ["Density", "-", massFindings.density || "-"],
+        ];
+
+        y = PDFGenerator.createTable(doc, headers, rows, y, margin, contentWidth);
+      }
+
+      // Lymph node findings
+      const axillaFindings = report.report.find((f) => f.type === "axilla" && f.found);
+      if (axillaFindings) {
+        y += 15;
+        doc.setFont("helvetica", "bold");
+        doc.text("Lymph node", margin, y);
+        y += 15;
+
+        const headers = ["Location", "Findings"];
+        const rows = [
+          ["Right axilla", "Multiple with fatty hilum"],
+          ["Left axilla", "Multiple with fatty hilum"],
+        ];
+
+        y = PDFGenerator.createTable(doc, headers, rows, y, margin, contentWidth);
+      }
+
+      // Footer
+      y += 25;
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(10);
+      doc.text("This report is generated automatically and should be reviewed by a qualified medical professional.", margin, y);
+
+      // Page numbers
+      doc.setFont("helvetica", "normal");
+      doc.text(`Page 1 of 1`, pageWidth - margin, pageHeight - 10, { align: "right" });
+
+      // Add error handling for the save operation
+      try {
+        doc.save(`medical-report-${report.id}.pdf`);
+      } catch (error) {
+        console.error('Error saving PDF:', error);
+      }
+    } catch (error) {
+      console.error('Error generating PDF:', error);
     }
-
-    // Lymph node findings
-    const axillaFindings = report.report.find((f) => f.type === "axilla" && f.found);
-    if (axillaFindings) {
-      y += 15;
-      doc.setFont("helvetica", "bold");
-      doc.text("Lymph node", margin, y);
-      y += 15;
-
-      const headers = ["Location", "Findings"];
-      const rows = [
-        ["Right axilla", "Multiple with fatty hilum"],
-        ["Left axilla", "Multiple with fatty hilum"],
-      ];
-
-      y = PDFGenerator.createTable(doc, headers, rows, y, margin, contentWidth);
-    }
-
-    // Footer
-    y += 25;
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(10);
-    doc.text("This report is generated automatically and should be reviewed by a qualified medical professional.", margin, y);
-
-    // Page numbers
-    doc.setFont("helvetica", "normal");
-    doc.text(`Page 1 of 1`, pageWidth - margin, pageHeight - 10, { align: "right" });
-
-    doc.save(`medical-report-${report.id}.pdf`);
   };
 
   return (
@@ -241,7 +250,9 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
           onClick={() => downloadPDF()} // Make sure this is properly bound
           className={`
             flex items-center gap-2 px-4 py-2 rounded-lg
-            ${darkMode ? "bg-gray-800 hover:bg-gray-700 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-900"}
+            ${darkMode 
+              ? "bg-gray-800 hover:bg-gray-700 text-white" 
+              : "bg-gray-100 hover:bg-gray-200 text-gray-900"}
             transition-colors
           `}
         >
