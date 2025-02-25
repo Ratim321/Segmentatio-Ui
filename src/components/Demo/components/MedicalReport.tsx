@@ -87,17 +87,19 @@ const FindingSection: React.FC<{
           }}
         />
         <div className="flex-1 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col items-start justify-start">
               <h4 className="font-medium text-left capitalize">{finding.type}</h4>
-              <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Click to view details</p>
+              <p className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                {finding.found ? "Present" : "Not Present"}
+              </p>
             </div>
             {finding.confidence && <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-md text-sm font-medium">{finding.confidence.toFixed(1)}%</span>}
           </div>
           {isExpanded ? <ChevronDown className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-500"}`} /> : <ChevronRight className={`w-5 h-5 ${darkMode ? "text-gray-400" : "text-gray-500"}`} />}
         </div>
       </button>
-      {isExpanded && (
+      {isExpanded && finding.found === 1 && (
         <div className={`px-4 pb-4 pt-2 ${darkMode ? "bg-gray-800/50" : "bg-gray-50/50"}`}>
           <div className="space-y-2 pl-8">
             {finding.type === "axilla" ? (
@@ -239,7 +241,7 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
       </div>
       
       <div className="space-y-4">
-        {report.report.map((finding, index) => finding.found === 1 && (
+        {report.report.map((finding, index) => (
           <FindingSection 
             key={index} 
             finding={finding} 
