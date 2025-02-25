@@ -42,9 +42,15 @@ export const ReportTooltip = ({ type, data }: ReportTooltipProps) => {
 
   const renderCalcificationReport = (report: CalcificationData) => (
     <div>
-      <p>
-        <span className="font-semibold">Type:</span> {report.calcification_type}
-      </p>
+      {report.found === 1 ? (
+        <p>
+          <span className="font-semibold">Type:</span> {report.calcification_type}
+        </p>
+      ) : (
+        <p>
+          <span className="font-semibold">Mass-Calcification:</span> Present
+        </p>
+      )}
     </div>
   );
 

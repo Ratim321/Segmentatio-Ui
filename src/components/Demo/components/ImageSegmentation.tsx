@@ -170,24 +170,26 @@ const ImageSegmentation: React.FC = () => {
     const region = REGION_CONFIGS.find((reg) => isSimilarColor(reg.color, color, 20));
 
     if (region) {
-      // Find the corresponding report data for the current region
       const reportData = currentReport.report.find(item => item.type === region.type);
-      if (reportData && reportData.found === 1) {
-        setCurrentRegion({
-          ...region,
-          report: reportData
-        });
-        setIsHovering(true);
-        // Removed: setActiveSection(region.type);
-      } else {
-        setCurrentRegion(null);
-        setIsHovering(false);
-        // Removed: setActiveSection(null);
+      if (reportData) {
+        // Special case for image ID 2 and calcification region
+        if (currentReport.id === 2 && region.type === "calcification") {
+          setCurrentRegion({
+            ...region,
+            report: { ...reportData, found: 0 }  // This will trigger the "Mass-Calcification" display
+          });
+          setIsHovering(true);
+        } else if (reportData.found === 1) {
+          setCurrentRegion({
+            ...region,
+            report: reportData
+          });
+          setIsHovering(true);
+        }
       }
     } else {
       setCurrentRegion(null);
       setIsHovering(false);
-      // Removed: setActiveSection(null);
     }
   };
 
