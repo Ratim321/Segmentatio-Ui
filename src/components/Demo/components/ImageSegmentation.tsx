@@ -170,20 +170,31 @@ const ImageSegmentation: React.FC = () => {
     const region = REGION_CONFIGS.find((reg) => isSimilarColor(reg.color, color, 20));
 
     if (region) {
-      setCurrentRegion(region);
-      setIsHovering(true);
-      setActiveSection(region.type);
+      // Find the corresponding report data for the current region
+      const reportData = currentReport.report.find(item => item.type === region.type);
+      if (reportData && reportData.found === 1) {
+        setCurrentRegion({
+          ...region,
+          report: reportData
+        });
+        setIsHovering(true);
+        // Removed: setActiveSection(region.type);
+      } else {
+        setCurrentRegion(null);
+        setIsHovering(false);
+        // Removed: setActiveSection(null);
+      }
     } else {
       setCurrentRegion(null);
       setIsHovering(false);
-      setActiveSection(null);
+      // Removed: setActiveSection(null);
     }
   };
 
   const handleMouseLeave = () => {
     setCurrentRegion(null);
     setIsHovering(false);
-    setActiveSection(null);
+    // Removed: setActiveSection(null);
   };
 
   return (
@@ -202,7 +213,7 @@ const ImageSegmentation: React.FC = () => {
         {/* Middle Column - Image Display */}
         <div className="relative h-full bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
           <div className="h-full flex items-start" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
-            <div className="relative h-full" style={{ aspectRatio: '1/1' }}>
+            <div className="relative h-full" style={{ aspectRatio: "auto" }}>
               {/* Input Image Layer */}
               <canvas
                 ref={inputCanvasRef}
@@ -265,16 +276,21 @@ const ImageSegmentation: React.FC = () => {
                   top: `${mousePos.y}px`,
                 }}
               >
-                <ReportTooltip type={currentRegion.type as "mass" | "axilla" | "calcification" | "breast tissue"} data={currentRegion.report} />
+                <ReportTooltip 
+                  type={currentRegion.type as "mass" | "axilla" | "calcification" | "breast tissue"} 
+                  data={currentRegion.report}
+                  birads={currentReport?.BIRADS}
+                  comments={currentReport?.comment}
+                />
               </div>
             )}
 
             {/* Opacity Slider */}
             {showSegmentation && (
-              <div className="absolute top-4 right-4 bg-white/10 backdrop-blur-md p-4 rounded-lg shadow-lg z-30 border border-white/20">
-                <div className="flex flex-col items-center gap-3">
-                  <Layers className="w-5 h-5 text-cyan-700 dark:text-cyan-400" />
-                  <div className="h-32 flex items-center">
+              <div className="absolute top-4 right-4 bg-white/10 backdrop-blur-md p-3 rounded-lg shadow-lg z-30 border border-white/20">
+                <div className="flex items-center gap-3">
+                  <Layers className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
+                  <div className="w-32 flex items-center">
                     <input
                       type="range"
                       min="0"
@@ -282,29 +298,27 @@ const ImageSegmentation: React.FC = () => {
                       step="0.01"
                       value={opacity}
                       onChange={(e) => setOpacity(parseFloat(e.target.value))}
-                      className="rotate-90 
-                        appearance-none bg-gradient-to-t from-cyan-700/20 dark:from-cyan-400/20 to-cyan-700/5 dark:to-cyan-400/5
-                        rounded-lg overflow-hidden w-32
-                        [&::-webkit-slider-thumb]:w-4
-                        [&::-webkit-slider-thumb]:h-4
+                      className="
+                        appearance-none bg-gradient-to-r from-cyan-700/20 dark:from-cyan-400/20 to-cyan-700/5 dark:to-cyan-400/5
+                        rounded-lg overflow-hidden w-full h-1.5
+                        [&::-webkit-slider-thumb]:w-3
+                        [&::-webkit-slider-thumb]:h-3
                         [&::-webkit-slider-thumb]:appearance-none
                         [&::-webkit-slider-thumb]:bg-cyan-700
                         [&::-webkit-slider-thumb]:dark:bg-cyan-400
                         [&::-webkit-slider-thumb]:rounded-full
-                        [&::-webkit-slider-thumb]:border-4
+                        [&::-webkit-slider-thumb]:border-2
                         [&::-webkit-slider-thumb]:border-white/20
                         [&::-webkit-slider-thumb]:cursor-pointer
-                        [&::-webkit-slider-thumb]:shadow-lg
+                        [&::-webkit-slider-thumb]:shadow-md
                         [&::-webkit-slider-thumb]:shadow-cyan-700/30
                         [&::-webkit-slider-thumb]:dark:shadow-cyan-400/30
                         [&::-webkit-slider-thumb]:transition-all
                         [&::-webkit-slider-thumb]:hover:scale-110"
                     />
                   </div>
-                  <span className="text-xs text-cyan-700 dark:text-cyan-400 font-medium text-center">
-                    Slide down to view
-                    <br />
-                    input image
+                  <span className="text-xs text-cyan-700 dark:text-cyan-400 font-medium whitespace-nowrap">
+                    Toggle View
                   </span>
                 </div>
               </div>

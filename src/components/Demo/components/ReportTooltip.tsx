@@ -1,6 +1,6 @@
 import { MassData, AxillaData, CalcificationData, BreastTissueData } from "../../../types/reports";
 import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+
 
 interface ReportTooltipProps {
   type: "mass" | "axilla" | "calcification" | "breast tissue";
@@ -9,7 +9,7 @@ interface ReportTooltipProps {
   comments?: string[];
 }
 
-export const ReportTooltip = ({ type, data, birads, comments }: ReportTooltipProps) => {
+export const ReportTooltip = ({ type, data }: ReportTooltipProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const renderMassReport = (report: MassData) => (
@@ -124,7 +124,7 @@ export const ReportTooltip = ({ type, data, birads, comments }: ReportTooltipPro
       </div>
 
       {/* BIRADS and Comments Section */}
-      {birads && (
+      {/* {birads && (
         <div className="mt-4 pt-4 border-t border-white/10">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
@@ -148,7 +148,7 @@ export const ReportTooltip = ({ type, data, birads, comments }: ReportTooltipPro
             </div>
           )}
         </div>
-      )}
+      )} */}
 
       {/* Decorative bottom line */}
       <div
