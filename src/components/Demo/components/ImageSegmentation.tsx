@@ -7,6 +7,7 @@ import { MedicalReport } from "./MedicalReport";
 import { Gallery } from "./Gallery";
 import { ComparisonModal } from "./ComparisonModal";
 import { Layers } from "lucide-react";
+import { Client } from "@gradio/client";
 
 type RegionConfig = ReturnType<typeof processImageReport>[0];
 type ImageReport = (typeof imageReports)[0];
@@ -73,7 +74,10 @@ const ImageSegmentation: React.FC = () => {
   const [opacity, setOpacity] = useState(0);
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const HF_TOKEN = "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";
+  const SPACE_ID = "ratyim/segmentationbreast";
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setUploadedImage(file);
@@ -91,9 +95,8 @@ const ImageSegmentation: React.FC = () => {
       setCurrentRegion(null);
       setActiveSection(null);
     } else {
-      // For uploaded images
       setSelectedImage(image);
-      setCurrentReport(null); // No predefined report for uploaded images
+      setCurrentReport(null); // No report for uploaded images
       setShowSegmentation(false);
       setCurrentRegion(null);
       setActiveSection(null);
@@ -121,32 +124,31 @@ const ImageSegmentation: React.FC = () => {
 
     try {
       if (uploadedImage) {
-        // Create FormData and append the image
-        const formData = new FormData();
-        formData.append("image", uploadedImage);
-
-        // Make API call to the backend
-        const response = await fetch("https://segmentation-backend.big-matrix.com/api/segment/", {
-          method: "POST",
-          body: formData,
+        // Connect to Gradio Space with token
+        const client = await Client.connect(SPACE_ID, {
+          hf_token: HF_TOKEN,
         });
 
-        if (!response.ok) {
-          throw new Error(`API request failed with status ${response.status}`);
-        }
+        // Use the uploaded file directly as a Blob
+        const result = await client.predict("/predict", {
+          input_image: uploadedImage,
+        });
 
-        // Get the segmented image from the response
-        const result = await response.json();
+        console.log("Gradio API Response:", result.data);
 
-        // Display the segmented image
+        const segmentedImageData = result.data[0]; // Gradio returns an array
+        const segmentedImageUrl = segmentedImageData.url || `https://huggingface.co/spaces/${SPACE_ID}/resolve/main/${segmentedImageData.path}`;
+
         const outputCanvas = outputCanvasRef.current;
-        if (!outputCanvas) return;
+        if (!outputCanvas) throw new Error("Output canvas not found");
 
         const ctx = outputCanvas.getContext("2d");
-        if (!ctx) return;
+        if (!ctx) throw new Error("Canvas context not available");
 
         const img = new Image();
-        img.src = result.predicted_mask; // Updated to match backend response key
+        img.src = segmentedImageUrl;
+        console.log("Setting img.src to:", img.src);
+
         img.onload = () => {
           outputCanvas.width = img.width;
           outputCanvas.height = img.height;
@@ -154,14 +156,11 @@ const ImageSegmentation: React.FC = () => {
           setShowSegmentation(true);
           setIsLoading(false);
         };
-
-        // Since the API doesn't return a full report, we won't set currentReport for uploaded images
-        // If you extend the API to return report data later, you can uncomment this:
-        // if (result.report) {
-        //   setCurrentReport(result.report);
-        // }
+        img.onerror = (e) => {
+          console.error("Image load error:", e);
+          throw new Error("Failed to load segmented image");
+        };
       } else if (currentReport) {
-        // For sample images with predefined reports
         const outputCanvas = outputCanvasRef.current;
         if (!outputCanvas) return;
 
@@ -181,7 +180,7 @@ const ImageSegmentation: React.FC = () => {
     } catch (error) {
       console.error("Error processing image:", error);
       setIsLoading(false);
-      alert("Failed to process the image. Please try again."); // User feedback
+      alert(`Failed to analyze image: ${error.message}`);
     }
   };
 
@@ -384,7 +383,6 @@ const ImageSegmentation: React.FC = () => {
 
         {/* Right Column - Analysis Controls and Report */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg overflow-y-auto">
-          {/* Analysis Button - Show when image selected but not analyzed */}
           {selectedImage && !showSegmentation && (
             <div className="mb-4">
               <h3 className="text-lg font-semibold mb-4">Image Analysis</h3>
@@ -398,7 +396,6 @@ const ImageSegmentation: React.FC = () => {
             </div>
           )}
 
-          {/* Medical Report - Show after analysis */}
           {showSegmentation && currentReport && (
             <>
               <MedicalReport report={currentReport} activeSection={activeSection} />
@@ -413,7 +410,6 @@ const ImageSegmentation: React.FC = () => {
         </div>
       </div>
 
-      {/* Comparison Modal */}
       {currentReport && (
         <ComparisonModal
           currentReport={currentReport}
