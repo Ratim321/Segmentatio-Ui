@@ -74,7 +74,7 @@ const ImageSegmentation: React.FC = () => {
   const [opacity, setOpacity] = useState(0);
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
-  const HF_TOKEN = import.meta.env.VITE_HF_TOKEN as string
+  const HF_TOKEN = "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";
   const SPACE_ID = "ratyim/segmentationbreast";
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
