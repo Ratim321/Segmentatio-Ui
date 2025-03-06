@@ -10,8 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@gradio/client": "^1.13.0",
     "@radix-ui/react-tooltip": "^1.1.8",
+    "axios": "^1.8.1",
     "chart.js": "^4.4.7",
+    "dotenv": "^16.4.7",
     "framer-motion": "^12.4.5",
     "jspdf": "^3.0.0",
     "lucide-react": "^0.344.0",
@@ -24,6 +27,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@types/node": "^22.13.9",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",

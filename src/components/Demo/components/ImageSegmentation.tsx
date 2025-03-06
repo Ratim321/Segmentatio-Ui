@@ -7,6 +7,7 @@ import { MedicalReport } from "./MedicalReport";
 import { Gallery } from "./Gallery";
 import { ComparisonModal } from "./ComparisonModal";
 import { Layers } from "lucide-react";
+import { Client } from "@gradio/client";
 
 type RegionConfig = ReturnType<typeof processImageReport>[0];
 type ImageReport = (typeof imageReports)[0];
@@ -73,7 +74,10 @@ const ImageSegmentation: React.FC = () => {
   const [opacity, setOpacity] = useState(0);
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const HF_TOKEN = import.meta.env.VITE_HF_TOKEN as string
+  const SPACE_ID = "ratyim/segmentationbreast";
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setUploadedImage(file);
@@ -91,8 +95,8 @@ const ImageSegmentation: React.FC = () => {
       setCurrentRegion(null);
       setActiveSection(null);
     } else {
-      // For uploaded images
       setSelectedImage(image);
+      setCurrentReport(null); // No report for uploaded images
       setShowSegmentation(false);
       setCurrentRegion(null);
       setActiveSection(null);
@@ -115,44 +119,36 @@ const ImageSegmentation: React.FC = () => {
 
   const handlePredict = async () => {
     if (!selectedImage || (!uploadedImage && !currentReport)) return;
-  
+
     setIsLoading(true);
-  
+
     try {
       if (uploadedImage) {
-        const formData = new FormData();
-        formData.append('image', uploadedImage);
-  
-        const apiUrl = 'http://localhost:8000/api/segment/';
-        console.log('Fetching from:', apiUrl);
-  
-        const response = await fetch(apiUrl, {
-          method: 'POST',
-          body: formData,
+        // Connect to Gradio Space with token
+        const client = await Client.connect(SPACE_ID, {
+          hf_token: HF_TOKEN,
         });
-  
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`API Error: ${response.status} - ${errorText}`);
-        }
-  
-        const result = await response.json();
-        console.log('API Response:', result);
-  
-        if (!result.predicted_mask) {
-          throw new Error('No predicted_mask in response');
-        }
-  
+
+        // Use the uploaded file directly as a Blob
+        const result = await client.predict("/predict", {
+          input_image: uploadedImage,
+        });
+
+        console.log("Gradio API Response:", result.data);
+
+        const segmentedImageData = result.data[0]; // Gradio returns an array
+        const segmentedImageUrl = segmentedImageData.url || `https://huggingface.co/spaces/${SPACE_ID}/resolve/main/${segmentedImageData.path}`;
+
         const outputCanvas = outputCanvasRef.current;
-        if (!outputCanvas) throw new Error('Output canvas not found');
-  
-        const ctx = outputCanvas.getContext('2d');
-        if (!ctx) throw new Error('Canvas context not available');
-  
+        if (!outputCanvas) throw new Error("Output canvas not found");
+
+        const ctx = outputCanvas.getContext("2d");
+        if (!ctx) throw new Error("Canvas context not available");
+
         const img = new Image();
-        img.src = result.predicted_mask;
-        console.log('Setting img.src to:', img.src.substring(0, 50) + '...'); // Log first 50 chars
-  
+        img.src = segmentedImageUrl;
+        console.log("Setting img.src to:", img.src);
+
         img.onload = () => {
           outputCanvas.width = img.width;
           outputCanvas.height = img.height;
@@ -161,16 +157,16 @@ const ImageSegmentation: React.FC = () => {
           setIsLoading(false);
         };
         img.onerror = (e) => {
-          console.error('Image load error:', e);
-          throw new Error('Invalid image URL or data');
+          console.error("Image load error:", e);
+          throw new Error("Failed to load segmented image");
         };
       } else if (currentReport) {
         const outputCanvas = outputCanvasRef.current;
         if (!outputCanvas) return;
-  
-        const ctx = outputCanvas.getContext('2d');
+
+        const ctx = outputCanvas.getContext("2d");
         if (!ctx) return;
-  
+
         const img = new Image();
         img.src = currentReport.output_img;
         img.onload = () => {
@@ -182,7 +178,7 @@ const ImageSegmentation: React.FC = () => {
         };
       }
     } catch (error) {
-      console.error('Error processing image:', error);
+      console.error("Error processing image:", error);
       setIsLoading(false);
       alert(`Failed to analyze image: ${error.message}`);
     }
@@ -229,18 +225,18 @@ const ImageSegmentation: React.FC = () => {
     const region = REGION_CONFIGS.find((reg) => isSimilarColor(reg.color, color, 20));
 
     if (region) {
-      const reportData = currentReport.report.find(item => item.type === region.type);
+      const reportData = currentReport.report.find((item) => item.type === region.type);
       if (reportData) {
         if (currentReport.id === 2 && region.type === "calcification") {
           setCurrentRegion({
             ...region,
-            report: { ...reportData, found: 0 }
+            report: { ...reportData, found: 0 },
           });
           setIsHovering(true);
         } else if (reportData.found === 1) {
           setCurrentRegion({
             ...region,
-            report: reportData
+            report: reportData,
           });
           setIsHovering(true);
         }
@@ -261,11 +257,11 @@ const ImageSegmentation: React.FC = () => {
       <div className="h-full grid grid-cols-[300px_1fr_500px] gap-6 p-6">
         {/* Left Column - Gallery */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg overflow-y-auto">
-          <Gallery 
-            images={imageReports.map((r) => r.input_img)} 
-            selectedImage={selectedImage} 
-            onImageSelect={handleImageSelect} 
-            onFileUpload={handleFileUpload} 
+          <Gallery
+            images={imageReports.map((r) => r.input_img)}
+            selectedImage={selectedImage}
+            onImageSelect={handleImageSelect}
+            onFileUpload={handleFileUpload}
           />
         </div>
 
@@ -335,8 +331,8 @@ const ImageSegmentation: React.FC = () => {
                   top: `${mousePos.y}px`,
                 }}
               >
-                <ReportTooltip 
-                  type={currentRegion.type as "mass" | "axilla" | "calcification" | "breast tissue"} 
+                <ReportTooltip
+                  type={currentRegion.type as "mass" | "axilla" | "calcification" | "breast tissue"}
                   data={currentRegion.report}
                   birads={currentReport?.BIRADS}
                   comments={currentReport?.comment}
@@ -387,13 +383,12 @@ const ImageSegmentation: React.FC = () => {
 
         {/* Right Column - Analysis Controls and Report */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg overflow-y-auto">
-          {/* Analysis Button - Show when image selected but not analyzed */}
           {selectedImage && !showSegmentation && (
             <div className="mb-4">
               <h3 className="text-lg font-semibold mb-4">Image Analysis</h3>
-              <button 
-                onClick={handlePredict} 
-                disabled={isLoading} 
+              <button
+                onClick={handlePredict}
+                disabled={isLoading}
                 className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 {isLoading ? "Analyzing..." : "Analyze Image"}
@@ -401,12 +396,11 @@ const ImageSegmentation: React.FC = () => {
             </div>
           )}
 
-          {/* Medical Report - Show after analysis */}
           {showSegmentation && currentReport && (
             <>
               <MedicalReport report={currentReport} activeSection={activeSection} />
-              <button 
-                onClick={() => setIsComparisonModalOpen(true)} 
+              <button
+                onClick={() => setIsComparisonModalOpen(true)}
                 className="w-full text-lg px-6 py-3 mt-6 border border-green-700 hover:border-green-700 bg-green-700 hover:dark:bg-gray-800 hover:dark:text-white text-white rounded-lg hover:bg-white hover:text-green-700 transition-colors"
               >
                 Compare with Other Cases
@@ -416,12 +410,11 @@ const ImageSegmentation: React.FC = () => {
         </div>
       </div>
 
-      {/* Comparison Modal */}
       {currentReport && (
-        <ComparisonModal 
-          currentReport={currentReport} 
-          isOpen={isComparisonModalOpen} 
-          onClose={() => setIsComparisonModalOpen(false)} 
+        <ComparisonModal
+          currentReport={currentReport}
+          isOpen={isComparisonModalOpen}
+          onClose={() => setIsComparisonModalOpen(false)}
         />
       )}
     </div>
