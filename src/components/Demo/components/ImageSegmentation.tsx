@@ -41,7 +41,7 @@ const LoadingScreen: React.FC = () => (
       </div>
 
       <div className="text-center">
-        <h3 className="text-xl font-mono text-white mb-2">Extracting Features</h3>
+        <h3 className="text-xl font-mono text-white mb-2">Analyzing Image</h3>
         <div className="flex items-center gap-1 justify-center text-cyan-400">
           <div className="w-2 h-2 rounded-full bg-current animate-bounce"></div>
           <div className="w-2 h-2 rounded-full bg-current animate-bounce [animation-delay:0.2s]"></div>
@@ -71,10 +71,12 @@ const ImageSegmentation: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
   const [opacity, setOpacity] = useState(0);
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setUploadedImage(file);
       const url = URL.createObjectURL(file);
       handleImageSelect(url);
     }
@@ -82,13 +84,19 @@ const ImageSegmentation: React.FC = () => {
 
   const handleImageSelect = (image: string) => {
     const report = imageReports.find((r) => r.input_img === image);
-    if (!report) return;
-
-    setSelectedImage(image);
-    setCurrentReport(report);
-    setShowSegmentation(false);
-    setCurrentRegion(null);
-    setActiveSection(null);
+    if (report) {
+      setSelectedImage(image);
+      setCurrentReport(report);
+      setShowSegmentation(false);
+      setCurrentRegion(null);
+      setActiveSection(null);
+    } else {
+      // For uploaded images
+      setSelectedImage(image);
+      setShowSegmentation(false);
+      setCurrentRegion(null);
+      setActiveSection(null);
+    }
 
     const img = new Image();
     img.src = image;
@@ -106,27 +114,78 @@ const ImageSegmentation: React.FC = () => {
   };
 
   const handlePredict = async () => {
-    if (!selectedImage || !currentReport) return;
-
+    if (!selectedImage || (!uploadedImage && !currentReport)) return;
+  
     setIsLoading(true);
-
-    setTimeout(() => {
-      const outputCanvas = outputCanvasRef.current;
-      if (!outputCanvas) return;
-
-      const ctx = outputCanvas.getContext("2d");
-      if (!ctx) return;
-
-      const img = new Image();
-      img.src = currentReport.output_img;
-      img.onload = () => {
-        outputCanvas.width = img.width;
-        outputCanvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-        setShowSegmentation(true);
-        setIsLoading(false);
-      };
-    }, 3000);
+  
+    try {
+      if (uploadedImage) {
+        const formData = new FormData();
+        formData.append('image', uploadedImage);
+  
+        const apiUrl = 'http://localhost:8000/api/segment/';
+        console.log('Fetching from:', apiUrl);
+  
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          body: formData,
+        });
+  
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`API Error: ${response.status} - ${errorText}`);
+        }
+  
+        const result = await response.json();
+        console.log('API Response:', result);
+  
+        if (!result.predicted_mask) {
+          throw new Error('No predicted_mask in response');
+        }
+  
+        const outputCanvas = outputCanvasRef.current;
+        if (!outputCanvas) throw new Error('Output canvas not found');
+  
+        const ctx = outputCanvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas context not available');
+  
+        const img = new Image();
+        img.src = result.predicted_mask;
+        console.log('Setting img.src to:', img.src.substring(0, 50) + '...'); // Log first 50 chars
+  
+        img.onload = () => {
+          outputCanvas.width = img.width;
+          outputCanvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          setShowSegmentation(true);
+          setIsLoading(false);
+        };
+        img.onerror = (e) => {
+          console.error('Image load error:', e);
+          throw new Error('Invalid image URL or data');
+        };
+      } else if (currentReport) {
+        const outputCanvas = outputCanvasRef.current;
+        if (!outputCanvas) return;
+  
+        const ctx = outputCanvas.getContext('2d');
+        if (!ctx) return;
+  
+        const img = new Image();
+        img.src = currentReport.output_img;
+        img.onload = () => {
+          outputCanvas.width = img.width;
+          outputCanvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          setShowSegmentation(true);
+          setIsLoading(false);
+        };
+      }
+    } catch (error) {
+      console.error('Error processing image:', error);
+      setIsLoading(false);
+      alert(`Failed to analyze image: ${error.message}`);
+    }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -172,11 +231,10 @@ const ImageSegmentation: React.FC = () => {
     if (region) {
       const reportData = currentReport.report.find(item => item.type === region.type);
       if (reportData) {
-        // Special case for image ID 2 and calcification region
         if (currentReport.id === 2 && region.type === "calcification") {
           setCurrentRegion({
             ...region,
-            report: { ...reportData, found: 0 }  // This will trigger the "Mass-Calcification" display
+            report: { ...reportData, found: 0 }
           });
           setIsHovering(true);
         } else if (reportData.found === 1) {
@@ -196,7 +254,6 @@ const ImageSegmentation: React.FC = () => {
   const handleMouseLeave = () => {
     setCurrentRegion(null);
     setIsHovering(false);
-    // Removed: setActiveSection(null);
   };
 
   return (
@@ -260,7 +317,7 @@ const ImageSegmentation: React.FC = () => {
 
                   <div className="space-y-4">
                     <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">Medical Image Analysis</h2>
-                    <p className="text-gray-600 dark:text-gray-300 max-w-md animate-fade-in">Select an image from the gallery to begin advanced medical analysis using our AI-powered segmentation technology.</p>
+                    <p className="text-gray-600 dark:text-gray-300 max-w-md animate-fade-in">Select an image from the gallery or upload your own to begin advanced medical analysis using our AI-powered segmentation technology.</p>
                   </div>
                 </div>
               </div>
