@@ -126,7 +126,7 @@ const ImageSegmentation: React.FC = () => {
         formData.append("image", uploadedImage);
 
         // Make API call to the backend
-        const response = await fetch("http://localhost:8000/api/segment/", {
+        const response = await fetch("https://segmentation-backend.big-matrix.com/api/segment/", {
           method: "POST",
           body: formData,
         });
