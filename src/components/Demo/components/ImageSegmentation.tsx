@@ -93,6 +93,7 @@ const ImageSegmentation: React.FC = () => {
     } else {
       // For uploaded images
       setSelectedImage(image);
+      setCurrentReport(null); // No predefined report for uploaded images
       setShowSegmentation(false);
       setCurrentRegion(null);
       setActiveSection(null);
@@ -115,44 +116,37 @@ const ImageSegmentation: React.FC = () => {
 
   const handlePredict = async () => {
     if (!selectedImage || (!uploadedImage && !currentReport)) return;
-  
+
     setIsLoading(true);
-  
+
     try {
       if (uploadedImage) {
+        // Create FormData and append the image
         const formData = new FormData();
-        formData.append('image', uploadedImage);
-  
-        const apiUrl = 'http://localhost:8000/api/segment/';
-        console.log('Fetching from:', apiUrl);
-  
-        const response = await fetch(apiUrl, {
-          method: 'POST',
+        formData.append("image", uploadedImage);
+
+        // Make API call to the backend
+        const response = await fetch("http://localhost:8000/api/segment/", {
+          method: "POST",
           body: formData,
         });
-  
+
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`API Error: ${response.status} - ${errorText}`);
+          throw new Error(`API request failed with status ${response.status}`);
         }
-  
+
+        // Get the segmented image from the response
         const result = await response.json();
-        console.log('API Response:', result);
-  
-        if (!result.predicted_mask) {
-          throw new Error('No predicted_mask in response');
-        }
-  
+
+        // Display the segmented image
         const outputCanvas = outputCanvasRef.current;
-        if (!outputCanvas) throw new Error('Output canvas not found');
-  
-        const ctx = outputCanvas.getContext('2d');
-        if (!ctx) throw new Error('Canvas context not available');
-  
+        if (!outputCanvas) return;
+
+        const ctx = outputCanvas.getContext("2d");
+        if (!ctx) return;
+
         const img = new Image();
-        img.src = result.predicted_mask;
-        console.log('Setting img.src to:', img.src.substring(0, 50) + '...'); // Log first 50 chars
-  
+        img.src = result.predicted_mask; // Updated to match backend response key
         img.onload = () => {
           outputCanvas.width = img.width;
           outputCanvas.height = img.height;
@@ -160,17 +154,20 @@ const ImageSegmentation: React.FC = () => {
           setShowSegmentation(true);
           setIsLoading(false);
         };
-        img.onerror = (e) => {
-          console.error('Image load error:', e);
-          throw new Error('Invalid image URL or data');
-        };
+
+        // Since the API doesn't return a full report, we won't set currentReport for uploaded images
+        // If you extend the API to return report data later, you can uncomment this:
+        // if (result.report) {
+        //   setCurrentReport(result.report);
+        // }
       } else if (currentReport) {
+        // For sample images with predefined reports
         const outputCanvas = outputCanvasRef.current;
         if (!outputCanvas) return;
-  
-        const ctx = outputCanvas.getContext('2d');
+
+        const ctx = outputCanvas.getContext("2d");
         if (!ctx) return;
-  
+
         const img = new Image();
         img.src = currentReport.output_img;
         img.onload = () => {
@@ -182,9 +179,9 @@ const ImageSegmentation: React.FC = () => {
         };
       }
     } catch (error) {
-      console.error('Error processing image:', error);
+      console.error("Error processing image:", error);
       setIsLoading(false);
-      alert(`Failed to analyze image: ${error.message}`);
+      alert("Failed to process the image. Please try again."); // User feedback
     }
   };
 
@@ -229,18 +226,18 @@ const ImageSegmentation: React.FC = () => {
     const region = REGION_CONFIGS.find((reg) => isSimilarColor(reg.color, color, 20));
 
     if (region) {
-      const reportData = currentReport.report.find(item => item.type === region.type);
+      const reportData = currentReport.report.find((item) => item.type === region.type);
       if (reportData) {
         if (currentReport.id === 2 && region.type === "calcification") {
           setCurrentRegion({
             ...region,
-            report: { ...reportData, found: 0 }
+            report: { ...reportData, found: 0 },
           });
           setIsHovering(true);
         } else if (reportData.found === 1) {
           setCurrentRegion({
             ...region,
-            report: reportData
+            report: reportData,
           });
           setIsHovering(true);
         }
@@ -261,11 +258,11 @@ const ImageSegmentation: React.FC = () => {
       <div className="h-full grid grid-cols-[300px_1fr_500px] gap-6 p-6">
         {/* Left Column - Gallery */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg overflow-y-auto">
-          <Gallery 
-            images={imageReports.map((r) => r.input_img)} 
-            selectedImage={selectedImage} 
-            onImageSelect={handleImageSelect} 
-            onFileUpload={handleFileUpload} 
+          <Gallery
+            images={imageReports.map((r) => r.input_img)}
+            selectedImage={selectedImage}
+            onImageSelect={handleImageSelect}
+            onFileUpload={handleFileUpload}
           />
         </div>
 
@@ -335,8 +332,8 @@ const ImageSegmentation: React.FC = () => {
                   top: `${mousePos.y}px`,
                 }}
               >
-                <ReportTooltip 
-                  type={currentRegion.type as "mass" | "axilla" | "calcification" | "breast tissue"} 
+                <ReportTooltip
+                  type={currentRegion.type as "mass" | "axilla" | "calcification" | "breast tissue"}
                   data={currentRegion.report}
                   birads={currentReport?.BIRADS}
                   comments={currentReport?.comment}
@@ -391,9 +388,9 @@ const ImageSegmentation: React.FC = () => {
           {selectedImage && !showSegmentation && (
             <div className="mb-4">
               <h3 className="text-lg font-semibold mb-4">Image Analysis</h3>
-              <button 
-                onClick={handlePredict} 
-                disabled={isLoading} 
+              <button
+                onClick={handlePredict}
+                disabled={isLoading}
                 className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 {isLoading ? "Analyzing..." : "Analyze Image"}
@@ -405,8 +402,8 @@ const ImageSegmentation: React.FC = () => {
           {showSegmentation && currentReport && (
             <>
               <MedicalReport report={currentReport} activeSection={activeSection} />
-              <button 
-                onClick={() => setIsComparisonModalOpen(true)} 
+              <button
+                onClick={() => setIsComparisonModalOpen(true)}
                 className="w-full text-lg px-6 py-3 mt-6 border border-green-700 hover:border-green-700 bg-green-700 hover:dark:bg-gray-800 hover:dark:text-white text-white rounded-lg hover:bg-white hover:text-green-700 transition-colors"
               >
                 Compare with Other Cases
@@ -418,10 +415,10 @@ const ImageSegmentation: React.FC = () => {
 
       {/* Comparison Modal */}
       {currentReport && (
-        <ComparisonModal 
-          currentReport={currentReport} 
-          isOpen={isComparisonModalOpen} 
-          onClose={() => setIsComparisonModalOpen(false)} 
+        <ComparisonModal
+          currentReport={currentReport}
+          isOpen={isComparisonModalOpen}
+          onClose={() => setIsComparisonModalOpen(false)}
         />
       )}
     </div>
