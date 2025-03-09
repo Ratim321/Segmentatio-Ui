@@ -64,6 +64,7 @@ const ImageSegmentation: React.FC = () => {
   const outputCanvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentReport, setCurrentReport] = useState<ImageReport | null>(null);
+  const [tabularReport, setTabularReport] = useState<string | null>(null); // State for tabular report
   const [showSegmentation, setShowSegmentation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentRegion, setCurrentRegion] = useState<RegionConfig | null>(null);
@@ -75,7 +76,8 @@ const ImageSegmentation: React.FC = () => {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
 
   const HF_TOKEN = "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";
-  const SPACE_ID = "ratyim/segmentationbreast";
+  const SEGMENTATION_SPACE_ID = "ratyim/segmentationbreast"; // Segmentation API
+  const TABULAR_SPACE_ID = "ratyim/breast_tabular"; // Tabular report API
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -91,12 +93,14 @@ const ImageSegmentation: React.FC = () => {
     if (report) {
       setSelectedImage(image);
       setCurrentReport(report);
+      setTabularReport(null); // Reset tabular report for gallery images
       setShowSegmentation(false);
       setCurrentRegion(null);
       setActiveSection(null);
     } else {
       setSelectedImage(image);
-      setCurrentReport(null); // No report for uploaded images
+      setCurrentReport(null); // No predefined report for uploaded images
+      setTabularReport(null);
       setShowSegmentation(false);
       setCurrentRegion(null);
       setActiveSection(null);
@@ -124,20 +128,19 @@ const ImageSegmentation: React.FC = () => {
 
     try {
       if (uploadedImage) {
-        // Connect to Gradio Space with token
-        const client = await Client.connect(SPACE_ID, {
+        // 1. Get segmentation from segmentationbreast API
+        const segmentationClient = await Client.connect(SEGMENTATION_SPACE_ID, {
           hf_token: HF_TOKEN,
         });
 
-        // Use the uploaded file directly as a Blob
-        const result = await client.predict("/predict", {
+        const segmentationResult = await segmentationClient.predict("/predict", {
           input_image: uploadedImage,
         });
 
-        console.log("Gradio API Response:", result.data);
+        console.log("Segmentation API Response:", segmentationResult.data);
 
-        const segmentedImageData = result.data[0]; // Gradio returns an array
-        const segmentedImageUrl = segmentedImageData.url || `https://huggingface.co/spaces/${SPACE_ID}/resolve/main/${segmentedImageData.path}`;
+        const segmentedImageData = segmentationResult.data[0];
+        const segmentedImageUrl = segmentedImageData.url || `https://huggingface.co/spaces/${SEGMENTATION_SPACE_ID}/resolve/main/${segmentedImageData.path}`;
 
         const outputCanvas = outputCanvasRef.current;
         if (!outputCanvas) throw new Error("Output canvas not found");
@@ -154,12 +157,25 @@ const ImageSegmentation: React.FC = () => {
           outputCanvas.height = img.height;
           ctx.drawImage(img, 0, 0);
           setShowSegmentation(true);
-          setIsLoading(false);
         };
         img.onerror = (e) => {
-          console.error("Image load error:", e);
+          console.error("Segmentation image load error:", e);
           throw new Error("Failed to load segmented image");
         };
+
+        // 2. Get tabular report from breast_tabular API
+        const tabularClient = await Client.connect(TABULAR_SPACE_ID, {
+          hf_token: HF_TOKEN,
+        });
+
+        const tabularResult = await tabularClient.predict("/predict", {
+          image: uploadedImage,
+        });
+
+        console.log("Tabular API Response:", tabularResult.data);
+
+        const reportText = tabularResult.data[0];
+        setTabularReport(reportText);
       } else if (currentReport) {
         const outputCanvas = outputCanvasRef.current;
         if (!outputCanvas) return;
@@ -174,18 +190,18 @@ const ImageSegmentation: React.FC = () => {
           outputCanvas.height = img.height;
           ctx.drawImage(img, 0, 0);
           setShowSegmentation(true);
-          setIsLoading(false);
         };
       }
     } catch (error) {
       console.error("Error processing image:", error);
-      setIsLoading(false);
       alert(`Failed to analyze image: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!showSegmentation || !currentReport) return;
+    if (!showSegmentation || (!currentReport && !uploadedImage)) return;
 
     const outputCanvas = outputCanvasRef.current;
     if (!outputCanvas) return;
@@ -224,7 +240,7 @@ const ImageSegmentation: React.FC = () => {
     const color = `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
     const region = REGION_CONFIGS.find((reg) => isSimilarColor(reg.color, color, 20));
 
-    if (region) {
+    if (region && currentReport) {
       const reportData = currentReport.report.find((item) => item.type === region.type);
       if (reportData) {
         if (currentReport.id === 2 && region.type === "calcification") {
@@ -256,7 +272,7 @@ const ImageSegmentation: React.FC = () => {
     <div className="h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-900">
       <div className="h-full grid grid-cols-[300px_1fr_500px] gap-6 p-6">
         {/* Left Column - Gallery */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg overflow-y-auto">
+        <div className="bg-gray-800 dark:bg-gray-900 rounded-xl p-4 shadow-lg overflow-y-auto">
           <Gallery
             images={imageReports.map((r) => r.input_img)}
             selectedImage={selectedImage}
@@ -266,7 +282,7 @@ const ImageSegmentation: React.FC = () => {
         </div>
 
         {/* Middle Column - Image Display */}
-        <div className="relative h-full bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+        <div className="relative h-full bg-gray-800 dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden">
           <div className="h-full flex items-start" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
             <div className="relative h-full" style={{ aspectRatio: "auto" }}>
               {/* Input Image Layer */}
@@ -313,7 +329,7 @@ const ImageSegmentation: React.FC = () => {
 
                   <div className="space-y-4">
                     <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">Medical Image Analysis</h2>
-                    <p className="text-gray-600 dark:text-gray-300 max-w-md animate-fade-in">Select an image from the gallery or upload your own to begin advanced medical analysis using our AI-powered segmentation technology.</p>
+                    <p className="text-gray-600 dark:text-gray-300 max-w-md animate-fade-in">Select an image from the gallery or upload your own to begin advanced medical analysis using our AI-powered technology.</p>
                   </div>
                 </div>
               </div>
@@ -322,8 +338,8 @@ const ImageSegmentation: React.FC = () => {
             {/* Loading Screen */}
             {isLoading && <LoadingScreen />}
 
-            {/* Tooltip */}
-            {currentRegion && showSegmentation && (
+            {/* Tooltip (for gallery images with segmentation) */}
+            {currentRegion && showSegmentation && currentReport && (
               <div
                 className="fixed z-50 pointer-events-none"
                 style={{
@@ -342,9 +358,9 @@ const ImageSegmentation: React.FC = () => {
 
             {/* Opacity Slider */}
             {showSegmentation && (
-              <div className="absolute top-4 right-4 bg-white/10 backdrop-blur-md p-3 rounded-lg shadow-lg z-30 border border-white/20">
+              <div className="absolute top-4 right-4 bg-gray-800/50 backdrop-blur-md p-3 rounded-lg shadow-lg z-30 border border-gray-700/50">
                 <div className="flex items-center gap-3">
-                  <Layers className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
+                  <Layers className="w-4 h-4 text-cyan-400" />
                   <div className="w-32 flex items-center">
                     <input
                       type="range"
@@ -354,25 +370,23 @@ const ImageSegmentation: React.FC = () => {
                       value={opacity}
                       onChange={(e) => setOpacity(parseFloat(e.target.value))}
                       className="
-                        appearance-none bg-gradient-to-r from-cyan-700/20 dark:from-cyan-400/20 to-cyan-700/5 dark:to-cyan-400/5
+                        appearance-none bg-gradient-to-r from-cyan-400/20 to-cyan-400/5
                         rounded-lg overflow-hidden w-full h-1.5
                         [&::-webkit-slider-thumb]:w-3
                         [&::-webkit-slider-thumb]:h-3
                         [&::-webkit-slider-thumb]:appearance-none
-                        [&::-webkit-slider-thumb]:bg-cyan-700
-                        [&::-webkit-slider-thumb]:dark:bg-cyan-400
+                        [&::-webkit-slider-thumb]:bg-cyan-400
                         [&::-webkit-slider-thumb]:rounded-full
                         [&::-webkit-slider-thumb]:border-2
-                        [&::-webkit-slider-thumb]:border-white/20
+                        [&::-webkit-slider-thumb]:border-gray-700/50
                         [&::-webkit-slider-thumb]:cursor-pointer
                         [&::-webkit-slider-thumb]:shadow-md
-                        [&::-webkit-slider-thumb]:shadow-cyan-700/30
-                        [&::-webkit-slider-thumb]:dark:shadow-cyan-400/30
+                        [&::-webkit-slider-thumb]:shadow-cyan-400/30
                         [&::-webkit-slider-thumb]:transition-all
                         [&::-webkit-slider-thumb]:hover:scale-110"
                     />
                   </div>
-                  <span className="text-xs text-cyan-700 dark:text-cyan-400 font-medium whitespace-nowrap">
+                  <span className="text-xs text-cyan-400 font-medium whitespace-nowrap">
                     Toggle View
                   </span>
                 </div>
@@ -382,10 +396,10 @@ const ImageSegmentation: React.FC = () => {
         </div>
 
         {/* Right Column - Analysis Controls and Report */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg overflow-y-auto">
+        <div className="bg-gray-800 dark:bg-gray-900 rounded-xl p-6 shadow-lg overflow-y-auto">
           {selectedImage && !showSegmentation && (
             <div className="mb-4">
-              <h3 className="text-lg font-semibold mb-4">Image Analysis</h3>
+              <h3 className="text-lg font-semibold text-gray-200 mb-4">Image Analysis</h3>
               <button
                 onClick={handlePredict}
                 disabled={isLoading}
@@ -396,15 +410,40 @@ const ImageSegmentation: React.FC = () => {
             </div>
           )}
 
-          {showSegmentation && currentReport && (
+          {showSegmentation && (
             <>
-              <MedicalReport report={currentReport} activeSection={activeSection} />
-              <button
-                onClick={() => setIsComparisonModalOpen(true)}
-                className="w-full text-lg px-6 py-3 mt-6 border border-green-700 hover:border-green-700 bg-green-700 hover:dark:bg-gray-800 hover:dark:text-white text-white rounded-lg hover:bg-white hover:text-green-700 transition-colors"
-              >
-                Compare with Other Cases
-              </button>
+              {/* Display API report for uploaded images with hover effect */}
+              {tabularReport && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-semibold text-gray-200 mb-2">Prediction Report</h3>
+                  <div
+                    className="bg-gray-700/50 p-4 rounded-lg text-sm text-gray-200 hover:bg-gray-600/70 transition-colors duration-200 cursor-pointer"
+                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#374151")}
+                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "")}
+                  >
+                    <pre className="whitespace-pre-wrap">
+                      {tabularReport.split("\n").map((line, index) => (
+                        <div key={index} className="py-1 border-b border-gray-600/50 last:border-b-0">
+                          {line}
+                        </div>
+                      ))}
+                    </pre>
+                  </div>
+                </div>
+              )}
+
+              {/* Display gallery report if available */}
+              {currentReport && (
+                <>
+                  <MedicalReport report={currentReport} activeSection={activeSection} />
+                  <button
+                    onClick={() => setIsComparisonModalOpen(true)}
+                    className="w-full text-lg px-6 py-3 mt-6 border border-green-700 hover:border-green-700 bg-green-700 hover:dark:bg-gray-800 hover:dark:text-white text-white rounded-lg hover:bg-white hover:text-green-700 transition-colors"
+                  >
+                    Compare with Other Cases
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>
