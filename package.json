@@ -10,9 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@gradio/client": "^1.13.1",
     "@radix-ui/react-tooltip": "^1.1.8",
     "chart.js": "^4.4.7",
     "framer-motion": "^12.4.5",
+    "gradio": "^0.1.0",
     "jspdf": "^2.5.2",
     "lucide-react": "^0.344.0",
     "prop-types": "^15.8.1",
