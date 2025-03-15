@@ -163,81 +163,15 @@ const ImageSegmentation: React.FC = () => {
 
   // Handle prediction with API integration (updated)
   const handlePredict = async () => {
-    if (!selectedImage || !currentReport || !uploadedFile) {
-      console.warn("Missing required data: selectedImage, currentReport, or uploadedFile");
+    if (!selectedImage || !currentReport) {
+      console.warn("Missing required data: selectedImage or currentReport");
       return;
     }
 
     setIsLoading(true);
 
-    if (!("id" in currentReport)) {
-      // Uploaded image case
-      try {
-        // Segmentation API Call
-        const segmentationClient = await Client.connect(SEGMENTATION_SPACE_ID, {
-          hf_token: HF_TOKEN,
-        });
-        const segmentationResult = await segmentationClient.predict("/predict", {
-          input_image: uploadedFile,
-        });
-
-        // Check if the response is a valid Base64 data URL
-        if (!segmentationResult?.data?.[0] || typeof segmentationResult.data[0] !== "string" || !segmentationResult.data[0].startsWith("data:image/png;base64,")) {
-          throw new Error("Invalid segmentation response: Expected a Base64 data URL");
-        }
-        const segmentedImageDataUrl = segmentationResult.data[0]; // Base64 data URL
-
-        // Tabular Report API Call
-        const tabularClient = await Client.connect(TABULAR_SPACE_ID, {
-          hf_token: HF_TOKEN,
-        });
-        const tabularResult = await tabularClient.predict("/predict", {
-          image: uploadedFile,
-        });
-
-        if (!tabularResult?.data?.[0]) {
-          throw new Error("Invalid tabular response");
-        }
-        const reportText = tabularResult.data[0];
-        const predictions = parseReportText(reportText);
-        const report = constructReport(predictions);
-
-        // Update report with segmented image
-        const updatedReport = {
-          input_img: selectedImage,
-          output_img: segmentedImageDataUrl, // Save the Base64 data URL directly
-          BIRADS: predictions.BIRADS_CAT.toString(),
-          comment: ["Analysis based on uploaded image"],
-          report,
-        };
-        setCurrentReport(updatedReport);
-
-        // Load segmented image onto canvas
-        const outputCanvas = outputCanvasRef.current;
-        if (!outputCanvas) throw new Error("Output canvas not found");
-
-        const ctx = outputCanvas.getContext("2d");
-        if (!ctx) throw new Error("Failed to get 2D context");
-
-        const img = new Image();
-        img.src = segmentedImageDataUrl; // Use the Base64 data URL
-        img.onload = () => {
-          outputCanvas.width = img.width;
-          outputCanvas.height = img.height;
-          ctx.drawImage(img, 0, 0);
-          setShowSegmentation(true);
-          setIsLoading(false);
-        };
-        img.onerror = (error) => {
-          throw new Error(`Failed to load segmented image: ${error}`);
-        };
-      } catch (error) {
-        console.error("Prediction Error:", error);
-        alert(`Failed to analyze the uploaded image: ${error.message}`);
-        setIsLoading(false);
-      }
-    } else {
-      // Gallery image case (unchanged)
+    // Gallery image case
+    if ("id" in currentReport) {
       setTimeout(() => {
         const outputCanvas = outputCanvasRef.current;
         if (!outputCanvas) return;
@@ -255,6 +189,78 @@ const ImageSegmentation: React.FC = () => {
           setIsLoading(false);
         };
       }, 3000);
+      return;
+    }
+
+    // Uploaded image case
+    if (!uploadedFile) {
+      console.warn("Missing required data: uploadedFile");
+      return;
+    }
+
+    try {
+      // Segmentation API Call
+      const segmentationClient = await Client.connect(SEGMENTATION_SPACE_ID, {
+        hf_token: HF_TOKEN,
+      });
+      const segmentationResult = await segmentationClient.predict("/predict", {
+        input_image: uploadedFile,
+      });
+
+      // Check if the response is a valid Base64 data URL
+      if (!segmentationResult?.data?.[0] || typeof segmentationResult.data[0] !== "string" || !segmentationResult.data[0].startsWith("data:image/png;base64,")) {
+        throw new Error("Invalid segmentation response: Expected a Base64 data URL");
+      }
+      const segmentedImageDataUrl = segmentationResult.data[0]; // Base64 data URL
+
+      // Tabular Report API Call
+      const tabularClient = await Client.connect(TABULAR_SPACE_ID, {
+        hf_token: HF_TOKEN,
+      });
+      const tabularResult = await tabularClient.predict("/predict", {
+        image: uploadedFile,
+      });
+
+      if (!tabularResult?.data?.[0]) {
+        throw new Error("Invalid tabular response");
+      }
+      const reportText = tabularResult.data[0];
+      const predictions = parseReportText(reportText);
+      const report = constructReport(predictions);
+
+      // Update report with segmented image
+      const updatedReport = {
+        input_img: selectedImage,
+        output_img: segmentedImageDataUrl, // Save the Base64 data URL directly
+        BIRADS: predictions.BIRADS_CAT.toString(),
+        comment: ["Analysis based on uploaded image"],
+        report,
+      };
+      setCurrentReport(updatedReport);
+
+      // Load segmented image onto canvas
+      const outputCanvas = outputCanvasRef.current;
+      if (!outputCanvas) throw new Error("Output canvas not found");
+
+      const ctx = outputCanvas.getContext("2d");
+      if (!ctx) throw new Error("Failed to get 2D context");
+
+      const img = new Image();
+      img.src = segmentedImageDataUrl; // Use the Base64 data URL
+      img.onload = () => {
+        outputCanvas.width = img.width;
+        outputCanvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        setShowSegmentation(true);
+        setIsLoading(false);
+      };
+      img.onerror = (error) => {
+        throw new Error(`Failed to load segmented image: ${error}`);
+      };
+    } catch (error) {
+      console.error("Prediction Error:", error);
+      alert(`Failed to analyze the uploaded image: ${error.message}`);
+      setIsLoading(false);
     }
   };
 
