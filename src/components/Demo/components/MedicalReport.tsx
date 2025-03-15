@@ -3,7 +3,7 @@ import React, { useState, useContext, useEffect } from "react";
 import { Download, ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
 import { ThemeContext } from "../../../context/ThemeContext";
 import { REGION_COLOR_MAP } from "../../../lib/constants";
-import { generatePDFReport } from "./Report"; // Adjust the import path as needed
+import { generatePDFReport } from "./Report"; 
 
 interface Finding {
   type: string;
@@ -166,27 +166,13 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
     setExpandedSections((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]));
   };
 
-  const handleDownloadPDF = () => {
-    generatePDFReport(report, segmentedImageDataUrl, setIsGeneratingPDF);
-  };
+ 
 
   return (
     <div className={`${darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"} p-4 rounded-lg shadow-md`}>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-400">Medical Report</h2>
-        <button
-          onClick={handleDownloadPDF}
-          disabled={isGeneratingPDF}
-          className={`
-            flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
-            ${darkMode ? "bg-gray-800 hover:bg-gray-700 text-white" : "bg-blue-100 hover:bg-blue-200 text-blue-700"}
-            transition-colors
-            disabled:opacity-50 disabled:cursor-not-allowed
-          `}
-        >
-          <Download className="w-4 h-4" />
-          {isGeneratingPDF ? "Generating..." : "Download PDF"}
-        </button>
+        
       </div>
 
       <div className="space-y-4">

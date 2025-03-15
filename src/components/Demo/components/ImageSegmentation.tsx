@@ -8,6 +8,8 @@ import { Gallery } from "./Gallery";
 import { ComparisonModal } from "./ComparisonModal";
 import { Layers } from "lucide-react";
 import { Client } from "@gradio/client";
+import { generatePDFReport } from "./Report";
+import { Download } from "lucide-react";
 
 type RegionConfig = ReturnType<typeof processImageReport>[0];
 type ImageReport = (typeof imageReports)[0];
@@ -62,7 +64,21 @@ const LoadingScreen: React.FC = () => (
   </div>
 );
 
+// Add these imports at the top
+import { useContext } from "react";
+import { ThemeContext } from "../../../context/ThemeContext";
+
 const ImageSegmentation: React.FC = () => {
+  // Add these states with your other state declarations
+  const { darkMode } = useContext(ThemeContext);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [segmentedImageDataUrl, setSegmentedImageDataUrl] = useState<string | null>(null);
+
+  // Replace the existing downloadPDF function with this
+  const handleDownloadPDF = () => {
+    if (!currentReport) return;
+    generatePDFReport(currentReport, currentReport.output_img, setIsGeneratingPDF);
+  };
   const inputCanvasRef = useRef<HTMLCanvasElement>(null);
   const outputCanvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -154,7 +170,8 @@ const ImageSegmentation: React.FC = () => {
 
     setIsLoading(true);
 
-    if (!("id" in currentReport)) { // Uploaded image case
+    if (!("id" in currentReport)) {
+      // Uploaded image case
       try {
         // Segmentation API Call
         const segmentationClient = await Client.connect(SEGMENTATION_SPACE_ID, {
@@ -308,41 +325,61 @@ const ImageSegmentation: React.FC = () => {
 
   const getMassDefinition = (code: number) => {
     switch (code) {
-      case 1: return "Well-defined";
-      case 2: return "Ill-defined";
-      case 3: return "Spiculated";
-      default: return "Unknown";
+      case 1:
+        return "Well-defined";
+      case 2:
+        return "Ill-defined";
+      case 3:
+        return "Spiculated";
+      default:
+        return "Unknown";
     }
   };
 
   const getMassDensity = (code: number) => {
     switch (code) {
-      case 1: return "Low densed";
-      case 2: return "Iso-dense/ Equal Dense";
-      case 3: return "High densed";
-      default: return "Unknown";
+      case 1:
+        return "Low densed";
+      case 2:
+        return "Iso-dense/ Equal Dense";
+      case 3:
+        return "High densed";
+      default:
+        return "Unknown";
     }
   };
 
   const getMassShape = (code: number) => {
     switch (code) {
-      case 1: return "Oval";
-      case 2: return "Round";
-      case 3: return "Irregular";
-      default: return "Unknown";
+      case 1:
+        return "Oval";
+      case 2:
+        return "Round";
+      case 3:
+        return "Irregular";
+      default:
+        return "Unknown";
     }
   };
 
   const getBreastDensity = (code: number) => {
     switch (code) {
-      case 1: return "Almost entirely fatty";
-      case 2: return "Scattered fibroglandular densities";
-      case 3: return "Heterogeneously dense";
-      case 4: return "Extremely dense";
-      default: return "Unknown";
+      case 1:
+        return "Almost entirely fatty";
+      case 2:
+        return "Scattered fibroglandular densities";
+      case 3:
+        return "Heterogeneously dense";
+      case 4:
+        return "Extremely dense";
+      default:
+        return "Unknown";
     }
   };
 
+  const downloadPDF = () => {
+    generatePDFReport(report, segmentedImageDataUrl, setIsGeneratingPDF);
+  };
   // Handle mouse movement (unchanged)
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!showSegmentation || !currentReport) return;
@@ -365,7 +402,9 @@ const ImageSegmentation: React.FC = () => {
     const halfSize = Math.floor(size / 2);
     const pixels = ctx.getImageData(Math.max(0, x - halfSize), Math.max(0, y - halfSize), size, size).data;
 
-    let r = 0, g = 0, b = 0;
+    let r = 0,
+      g = 0,
+      b = 0;
     for (let i = 0; i < pixels.length; i += 4) {
       r += pixels[i];
       g += pixels[i + 1];
@@ -401,7 +440,7 @@ const ImageSegmentation: React.FC = () => {
 
   return (
     <div className="h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-900">
-      <div className="h-full grid grid-cols-[300px_1fr_500px] gap-6 p-6">
+      <div className="h-full grid grid-cols-[auto_1fr_500px] gap-6 p-6">
         {/* Left Column - Gallery */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-lg overflow-y-auto">
           <Gallery images={imageReports.map((r) => r.input_img)} selectedImage={selectedImage} onImageSelect={handleImageSelect} onFileUpload={handleFileUpload} />
@@ -409,10 +448,21 @@ const ImageSegmentation: React.FC = () => {
 
         {/* Middle Column - Image Display */}
         <div className="relative h-full bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-          <div className="h-full flex items-start" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
-            <div className="relative h-full" style={{ aspectRatio: "auto" }}>
-              <canvas ref={inputCanvasRef} className={`absolute top-0 left-0 z-20 h-full w-full dark:border-gray-700 ${showSegmentation ? "cursor-crosshair" : "cursor-default"} transition-all duration-300`} style={{ opacity: showSegmentation ? opacity : 1 }} />
-              <canvas ref={outputCanvasRef} className={`h-full w-full dark:border-gray-700 ${showSegmentation ? "cursor-crosshair" : "cursor-default"} transition-all duration-300`} />
+          <div className="h-full flex items-center justify-center" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+            <div className="relative h-full flex items-center justify-center">
+              <canvas
+                ref={inputCanvasRef}
+                className={`absolute top-0 h-full w-auto max-w-none z-20 dark:border-gray-700 
+                  ${showSegmentation ? "cursor-crosshair" : "cursor-default"} 
+                  transition-all duration-300`}
+                style={{ opacity: showSegmentation ? opacity : 1 }}
+              />
+              <canvas
+                ref={outputCanvasRef}
+                className={`h-full w-auto max-w-none dark:border-gray-700 
+                  ${showSegmentation ? "cursor-crosshair" : "cursor-default"} 
+                  transition-all duration-300`}
+              />
             </div>
 
             {!selectedImage && (
@@ -450,7 +500,15 @@ const ImageSegmentation: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <Layers className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
                   <div className="w-32 flex items-center">
-                    <input type="range" min="0" max="1" step="0.01" value={opacity} onChange={(e) => setOpacity(parseFloat(e.target.value))} className="appearance-none bg-gradient-to-r from-cyan-700/20 dark:from-cyan-400/20 to-cyan-700/5 dark:to-cyan-400/5 rounded-lg overflow-hidden w-full h-1.5 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-cyan-700 [&::-webkit-slider-thumb]:dark:bg-cyan-400 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white/20 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:shadow-cyan-700/30 [&::-webkit-slider-thumb]:dark:shadow-cyan-400/30 [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:scale-110" />
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={opacity}
+                      onChange={(e) => setOpacity(parseFloat(e.target.value))}
+                      className="appearance-none bg-gradient-to-r from-cyan-700/20 dark:from-cyan-400/20 to-cyan-700/5 dark:to-cyan-400/5 rounded-lg overflow-hidden w-full h-1.5 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-cyan-700 [&::-webkit-slider-thumb]:dark:bg-cyan-400 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white/20 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:shadow-cyan-700/30 [&::-webkit-slider-thumb]:dark:shadow-cyan-400/30 [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:scale-110"
+                    />
                   </div>
                   <span className="text-xs text-cyan-700 dark:text-cyan-400 font-medium whitespace-nowrap">Toggle View</span>
                 </div>
@@ -473,9 +531,20 @@ const ImageSegmentation: React.FC = () => {
           {showSegmentation && currentReport && (
             <>
               <MedicalReport report={currentReport} activeSection={activeSection} />
-              <button onClick={() => setIsComparisonModalOpen(true)} className="w-full text-lg px-6 py-3 mt-6 border border-green-700 hover:border-green-700 bg-green-700 hover:dark:bg-gray-800 hover:dark:text-white text-white rounded-lg hover:bg-white hover:text-green-700 transition-colors">
-                Compare with Other Cases
-              </button>
+              <div className="flex flex-col gap-4 mt-6">
+               
+                <button
+                  onClick={handleDownloadPDF}
+                  disabled={isGeneratingPDF}
+                  className="w-full flex justify-center items-center text-lg px-6 py-3 border border-green-700 hover:border-green-700 bg-green-700 hover:dark:bg-gray-800 hover:dark:text-white text-white rounded-lg hover:bg-white hover:text-green-700 transition-colors"
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  {isGeneratingPDF ? "Generating..." : "Download PDF"}
+                </button>
+                <button onClick={() => setIsComparisonModalOpen(true)} className="w-full text-lg px-6 py-3 border border-green-700 hover:border-green-700 bg-green-700 hover:dark:bg-gray-800 hover:dark:text-white text-white rounded-lg hover:bg-white hover:text-green-700 transition-colors">
+                  Compare with Other Cases
+                </button>
+              </div>
             </>
           )}
         </div>

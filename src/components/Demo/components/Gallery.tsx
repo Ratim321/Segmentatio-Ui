@@ -10,7 +10,7 @@ interface GalleryProps {
 
 export const Gallery = ({ images, selectedImage, onImageSelect, onFileUpload }: GalleryProps) => {
   return (
-    <div className="flex flex-wrap gap-4 mb-6">
+    <div className="flex flex-col gap-4 mb-6">
       {images.map((image, index) => (
         <div
           key={index}
