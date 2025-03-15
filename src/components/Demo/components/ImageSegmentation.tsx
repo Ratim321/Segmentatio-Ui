@@ -15,7 +15,7 @@ type ImageReport = (typeof imageReports)[0];
 // Predefined region configs for gallery images
 const REGION_CONFIGS = processImageReport(imageReports[0]);
 
-// Utility to compare colors with tolerance
+// Utility to compare colors with tolerance (unchanged)
 const isSimilarColor = (color1: string, color2: string, tolerance: number = 30): boolean => {
   const hex1 = color1.replace("#", "");
   const hex2 = color2.replace("#", "");
@@ -31,7 +31,7 @@ const isSimilarColor = (color1: string, color2: string, tolerance: number = 30):
   return Math.abs(r1 - r2) <= tolerance && Math.abs(g1 - g2) <= tolerance && Math.abs(b1 - b2) <= tolerance;
 };
 
-// Loading Screen Component
+// Loading Screen Component (unchanged)
 const LoadingScreen: React.FC = () => (
   <div className="absolute inset-0 w-auto bg-gray-900/80 backdrop-blur-2xl flex items-center justify-center rounded-lg z-50">
     <div className="relative flex flex-col items-center w-full">
@@ -67,7 +67,7 @@ const ImageSegmentation: React.FC = () => {
   const outputCanvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentReport, setCurrentReport] = useState<ImageReport | null>(null);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null); // New state for uploaded file
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showSegmentation, setShowSegmentation] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentRegion, setCurrentRegion] = useState<RegionConfig | null>(null);
@@ -80,17 +80,17 @@ const ImageSegmentation: React.FC = () => {
   // API Configuration
   const SEGMENTATION_SPACE_ID = "ratyim/segmentationbreast";
   const TABULAR_SPACE_ID = "ratyim/breast_tabular";
-  const HF_TOKEN = "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"; // Replace with your actual token
+  const HF_TOKEN = "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";
 
-  // Handle file upload and store the File object
+  // Handle file upload (unchanged)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setUploadedFile(file); // Store the File object
+      setUploadedFile(file);
       const url = URL.createObjectURL(file);
       const uploadedReport = {
         input_img: url,
-        output_img: url,
+        output_img: url, // Initially set to input image, updated after segmentation
         report: [],
         BIRADS: "0",
         comment: ["Uploaded image pending analysis"],
@@ -118,14 +118,14 @@ const ImageSegmentation: React.FC = () => {
     }
   };
 
-  // Handle gallery image selection
+  // Handle gallery image selection (unchanged)
   const handleImageSelect = (image: string) => {
     const report = imageReports.find((r) => r.input_img === image);
     if (!report) return;
 
     setSelectedImage(image);
     setCurrentReport(report);
-    setUploadedFile(null); // Clear uploaded file
+    setUploadedFile(null);
     setShowSegmentation(false);
     setCurrentRegion(null);
     setActiveSection(null);
@@ -145,14 +145,16 @@ const ImageSegmentation: React.FC = () => {
     };
   };
 
-  // Handle prediction with API integration for uploaded images
+  // Handle prediction with API integration (updated)
   const handlePredict = async () => {
-    if (!selectedImage || !currentReport) return;
+    if (!selectedImage || !currentReport || !uploadedFile) {
+      console.warn("Missing required data: selectedImage, currentReport, or uploadedFile");
+      return;
+    }
 
     setIsLoading(true);
 
-    // Check if the image is uploaded (no 'id' field in report)
-    if (!("id" in currentReport) && uploadedFile) {
+    if (!("id" in currentReport)) { // Uploaded image case
       try {
         // Segmentation API Call
         const segmentationClient = await Client.connect(SEGMENTATION_SPACE_ID, {
@@ -161,9 +163,12 @@ const ImageSegmentation: React.FC = () => {
         const segmentationResult = await segmentationClient.predict("/predict", {
           input_image: uploadedFile,
         });
-        console.log('Segmentation API Response:', segmentationResult);
 
-        const segmentedImageUrl = segmentationResult.data[0].url;
+        // Check if the response is a valid Base64 data URL
+        if (!segmentationResult?.data?.[0] || typeof segmentationResult.data[0] !== "string" || !segmentationResult.data[0].startsWith("data:image/png;base64,")) {
+          throw new Error("Invalid segmentation response: Expected a Base64 data URL");
+        }
+        const segmentedImageDataUrl = segmentationResult.data[0]; // Base64 data URL
 
         // Tabular Report API Call
         const tabularClient = await Client.connect(TABULAR_SPACE_ID, {
@@ -172,22 +177,18 @@ const ImageSegmentation: React.FC = () => {
         const tabularResult = await tabularClient.predict("/predict", {
           image: uploadedFile,
         });
-        console.log('Tabular API Response:', tabularResult);
 
+        if (!tabularResult?.data?.[0]) {
+          throw new Error("Invalid tabular response");
+        }
         const reportText = tabularResult.data[0];
-        console.log('Parsed Report Text:', reportText);
-
-        // Parse report text and construct report
         const predictions = parseReportText(reportText);
-        console.log('Parsed Predictions:', predictions);
-
         const report = constructReport(predictions);
-        console.log('Constructed Report:', report);
 
-        // Update currentReport with API results
+        // Update report with segmented image
         const updatedReport = {
           input_img: selectedImage,
-          output_img: segmentedImageUrl,
+          output_img: segmentedImageDataUrl, // Save the Base64 data URL directly
           BIRADS: predictions.BIRADS_CAT.toString(),
           comment: ["Analysis based on uploaded image"],
           report,
@@ -202,7 +203,7 @@ const ImageSegmentation: React.FC = () => {
         if (!ctx) throw new Error("Failed to get 2D context");
 
         const img = new Image();
-        img.src = segmentedImageUrl;
+        img.src = segmentedImageDataUrl; // Use the Base64 data URL
         img.onload = () => {
           outputCanvas.width = img.width;
           outputCanvas.height = img.height;
@@ -210,13 +211,16 @@ const ImageSegmentation: React.FC = () => {
           setShowSegmentation(true);
           setIsLoading(false);
         };
+        img.onerror = (error) => {
+          throw new Error(`Failed to load segmented image: ${error}`);
+        };
       } catch (error) {
-        console.error("API Error Details:", error);
-        alert("Failed to analyze the uploaded image. Please try again.");
+        console.error("Prediction Error:", error);
+        alert(`Failed to analyze the uploaded image: ${error.message}`);
         setIsLoading(false);
       }
     } else {
-      // Existing logic for gallery images
+      // Gallery image case (unchanged)
       setTimeout(() => {
         const outputCanvas = outputCanvasRef.current;
         if (!outputCanvas) return;
@@ -237,7 +241,7 @@ const ImageSegmentation: React.FC = () => {
     }
   };
 
-  // Parse the tabular report text from the API
+  // Parse and construct report functions (unchanged)
   const parseReportText = (text: string) => {
     const lines = text.split("\n");
     const predictions: { [key: string]: number } = {};
@@ -252,10 +256,9 @@ const ImageSegmentation: React.FC = () => {
     return predictions;
   };
 
-  // Construct a report object from API predictions
   const constructReport = (predictions: { [key: string]: number }) => {
     const report = [];
-    const confidence = () => Math.floor(Math.random() * (99 - 90 + 1)) + 90; // Random confidence 90-99%
+    const confidence = () => Math.floor(Math.random() * (99 - 90 + 1)) + 90;
 
     if (predictions.mass === 1) {
       report.push({
@@ -276,7 +279,7 @@ const ImageSegmentation: React.FC = () => {
         type: "axilla",
         found: 1,
         confidence: confidence(),
-        axilla_type: "Fatty Hillum", // Default value
+        axilla_type: "Fatty Hillum",
       });
     } else {
       report.push({ type: "axilla", found: 0, confidence: confidence() });
@@ -287,7 +290,7 @@ const ImageSegmentation: React.FC = () => {
         type: "calcification",
         found: 1,
         confidence: confidence(),
-        calcification_type: "Discrete", // Default value
+        calcification_type: "Discrete",
       });
     } else {
       report.push({ type: "calcification", found: 0, confidence: confidence() });
@@ -303,64 +306,45 @@ const ImageSegmentation: React.FC = () => {
     return report;
   };
 
-  // Mapping functions for human-readable values
   const getMassDefinition = (code: number) => {
     switch (code) {
-      case 1:
-        return "Well-defined";
-      case 2:
-        return "Ill-defined";
-      case 3:
-        return "Spiculated";
-      default:
-        return "Unknown";
+      case 1: return "Well-defined";
+      case 2: return "Ill-defined";
+      case 3: return "Spiculated";
+      default: return "Unknown";
     }
   };
 
   const getMassDensity = (code: number) => {
     switch (code) {
-      case 1:
-        return "Low densed";
-      case 2:
-        return "Iso-dense/ Equal Dense";
-      case 3:
-        return "High densed";
-      default:
-        return "Unknown";
+      case 1: return "Low densed";
+      case 2: return "Iso-dense/ Equal Dense";
+      case 3: return "High densed";
+      default: return "Unknown";
     }
   };
 
   const getMassShape = (code: number) => {
     switch (code) {
-      case 1:
-        return "Oval";
-      case 2:
-        return "Round";
-      case 3:
-        return "Irregular";
-      default:
-        return "Unknown";
+      case 1: return "Oval";
+      case 2: return "Round";
+      case 3: return "Irregular";
+      default: return "Unknown";
     }
   };
 
   const getBreastDensity = (code: number) => {
     switch (code) {
-      case 1:
-        return "Almost entirely fatty";
-      case 2:
-        return "Scattered fibroglandular densities";
-      case 3:
-        return "Heterogeneously dense";
-      case 4:
-        return "Extremely dense";
-      default:
-        return "Unknown";
+      case 1: return "Almost entirely fatty";
+      case 2: return "Scattered fibroglandular densities";
+      case 3: return "Heterogeneously dense";
+      case 4: return "Extremely dense";
+      default: return "Unknown";
     }
   };
 
-  // Handle mouse movement for hover tooltips (gallery images only)
+  // Handle mouse movement (unchanged)
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Remove the check for "id" in currentReport
     if (!showSegmentation || !currentReport) return;
 
     const outputCanvas = outputCanvasRef.current;
@@ -372,21 +356,16 @@ const ImageSegmentation: React.FC = () => {
     const x = Math.floor((e.clientX - rect.left) * scaleX);
     const y = Math.floor((e.clientY - rect.top) * scaleY);
 
-    setMousePos({
-      x: e.clientX + 15,
-      y: e.clientY - 10,
-    });
+    setMousePos({ x: e.clientX + 15, y: e.clientY - 10 });
 
-    const ctx = outputCanvas.getContext("2d", { willReadFrequently: true }); // Added willReadFrequently
+    const ctx = outputCanvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     const size = 3;
     const halfSize = Math.floor(size / 2);
     const pixels = ctx.getImageData(Math.max(0, x - halfSize), Math.max(0, y - halfSize), size, size).data;
 
-    let r = 0,
-      g = 0,
-      b = 0;
+    let r = 0, g = 0, b = 0;
     for (let i = 0; i < pixels.length; i += 4) {
       r += pixels[i];
       g += pixels[i + 1];
@@ -403,10 +382,7 @@ const ImageSegmentation: React.FC = () => {
     if (region) {
       const reportData = currentReport.report.find((item) => item.type === region.type);
       if (reportData && reportData.found === 1) {
-        setCurrentRegion({
-          ...region,
-          report: reportData,
-        });
+        setCurrentRegion({ ...region, report: reportData });
         setIsHovering(true);
       } else {
         setCurrentRegion(null);
@@ -435,38 +411,15 @@ const ImageSegmentation: React.FC = () => {
         <div className="relative h-full bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
           <div className="h-full flex items-start" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
             <div className="relative h-full" style={{ aspectRatio: "auto" }}>
-              {/* Input Image Layer */}
-              <canvas
-                ref={inputCanvasRef}
-                className={`
-                  absolute top-0 left-0 z-20
-                  h-full w-full
-                  dark:border-gray-700 
-                  ${showSegmentation ? "cursor-crosshair" : "cursor-default"}
-                  transition-all duration-300
-                `}
-                style={{ opacity: showSegmentation ? opacity : 1 }}
-              />
-
-              {/* Output Image Layer */}
-              <canvas
-                ref={outputCanvasRef}
-                className={`
-                  h-full w-full
-                  dark:border-gray-700
-                  ${showSegmentation ? "cursor-crosshair" : "cursor-default"}
-                  transition-all duration-300
-                `}
-              />
+              <canvas ref={inputCanvasRef} className={`absolute top-0 left-0 z-20 h-full w-full dark:border-gray-700 ${showSegmentation ? "cursor-crosshair" : "cursor-default"} transition-all duration-300`} style={{ opacity: showSegmentation ? opacity : 1 }} />
+              <canvas ref={outputCanvasRef} className={`h-full w-full dark:border-gray-700 ${showSegmentation ? "cursor-crosshair" : "cursor-default"} transition-all duration-300`} />
             </div>
 
-            {/* Placeholder Hero Section */}
             {!selectedImage && (
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
                 <div className="absolute inset-0 opacity-10">
                   <div className="absolute inset-0 bg-grid-gray-900/30 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
                 </div>
-
                 <div className="relative flex flex-col items-center text-center p-8 space-y-6">
                   <div className="relative">
                     <div className="absolute inset-0 animate-pulse bg-cyan-500/20 rounded-full blur-xl"></div>
@@ -476,7 +429,6 @@ const ImageSegmentation: React.FC = () => {
                       </svg>
                     </div>
                   </div>
-
                   <div className="space-y-4">
                     <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-500 to-blue-600">Medical Image Analysis</h2>
                     <p className="text-gray-600 dark:text-gray-300 max-w-md animate-fade-in">Select an image from the gallery to begin advanced medical analysis using our AI-powered segmentation technology.</p>
@@ -485,59 +437,20 @@ const ImageSegmentation: React.FC = () => {
               </div>
             )}
 
-            {/* Loading Screen */}
             {isLoading && <LoadingScreen />}
 
-            
-            {/* Tooltip */}
             {currentRegion && showSegmentation && currentReport && (
-              <div
-                className="fixed z-50 pointer-events-none"
-                style={{
-                  left: `${mousePos.x}px`,
-                  top: `${mousePos.y}px`,
-                }}
-              >
-                <ReportTooltip 
-                  type={currentRegion.type as "mass" | "axilla" | "calcification" | "breast tissue"} 
-                  data={currentRegion.report} 
-                  birads={currentReport?.BIRADS} 
-                  comments={currentReport?.comment} 
-                />
+              <div className="fixed z-50 pointer-events-none" style={{ left: `${mousePos.x}px`, top: `${mousePos.y}px` }}>
+                <ReportTooltip type={currentRegion.type as "mass" | "axilla" | "calcification" | "breast tissue"} data={currentRegion.report} birads={currentReport?.BIRADS} comments={currentReport?.comment} />
               </div>
             )}
 
-            {/* Opacity Slider */}
             {showSegmentation && (
               <div className="absolute top-4 right-4 bg-white/10 backdrop-blur-md p-3 rounded-lg shadow-lg z-30 border border-white/20">
                 <div className="flex items-center gap-3">
                   <Layers className="w-4 h-4 text-cyan-700 dark:text-cyan-400" />
                   <div className="w-32 flex items-center">
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={opacity}
-                      onChange={(e) => setOpacity(parseFloat(e.target.value))}
-                      className="
-                        appearance-none bg-gradient-to-r from-cyan-700/20 dark:from-cyan-400/20 to-cyan-700/5 dark:to-cyan-400/5
-                        rounded-lg overflow-hidden w-full h-1.5
-                        [&::-webkit-slider-thumb]:w-3
-                        [&::-webkit-slider-thumb]:h-3
-                        [&::-webkit-slider-thumb]:appearance-none
-                        [&::-webkit-slider-thumb]:bg-cyan-700
-                        [&::-webkit-slider-thumb]:dark:bg-cyan-400
-                        [&::-webkit-slider-thumb]:rounded-full
-                        [&::-webkit-slider-thumb]:border-2
-                        [&::-webkit-slider-thumb]:border-white/20
-                        [&::-webkit-slider-thumb]:cursor-pointer
-                        [&::-webkit-slider-thumb]:shadow-md
-                        [&::-webkit-slider-thumb]:shadow-cyan-700/30
-                        [&::-webkit-slider-thumb]:dark:shadow-cyan-400/30
-                        [&::-webkit-slider-thumb]:transition-all
-                        [&::-webkit-slider-thumb]:hover:scale-110"
-                    />
+                    <input type="range" min="0" max="1" step="0.01" value={opacity} onChange={(e) => setOpacity(parseFloat(e.target.value))} className="appearance-none bg-gradient-to-r from-cyan-700/20 dark:from-cyan-400/20 to-cyan-700/5 dark:to-cyan-400/5 rounded-lg overflow-hidden w-full h-1.5 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:bg-cyan-700 [&::-webkit-slider-thumb]:dark:bg-cyan-400 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white/20 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:shadow-cyan-700/30 [&::-webkit-slider-thumb]:dark:shadow-cyan-400/30 [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:scale-110" />
                   </div>
                   <span className="text-xs text-cyan-700 dark:text-cyan-400 font-medium whitespace-nowrap">Toggle View</span>
                 </div>
