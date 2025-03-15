@@ -190,15 +190,15 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
       </div>
 
       <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="space-y-2">
-            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Original Image</p>
+            <p className="text-sm font-medium text-center text-blue-600 dark:text-blue-400">Original Image</p>
             <div className="aspect-square bg-black/10 rounded-lg overflow-hidden">
               <img src={report.input_img} alt="Original" className="w-full h-full object-contain" />
             </div>
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Segmented Image</p>
+            <p className="text-sm font-medium  text-center text-blue-600 dark:text-blue-400">Segmented Image</p>
             <div className="aspect-square bg-black/10 rounded-lg overflow-hidden">
               <img
                 src={segmentedImageDataUrl || report.output_img}

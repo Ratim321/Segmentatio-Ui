@@ -144,39 +144,46 @@ export const generatePDFReport = async (
     y += 20;
 
     // Images Section (Side by Side)
-    const imageWidth = contentWidth / 3; // Smaller images (previously /2.5, now /3)
+    const imageWidth = contentWidth / 3; // Smaller images
     const gap = 8; // Reduced gap
     const totalImageWidth = 2 * imageWidth + gap;
     const imageXStart = margin + (contentWidth - totalImageWidth) / 2;
 
-    // Original Image
+    // Original Image Heading
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8); // Smaller label font
     doc.setTextColor(33, 150, 243);
-    doc.text("Original Image", imageXStart, y - 3, { align: "center" });
+    doc.text("Original Image", imageXStart + imageWidth / 2, y - 3, { align: "center" }); // Centered over image
+
+    // Add space below heading
+    const imageYStart = y + 5; // Move image down by 5mm to create space below heading
+
+    // Original Image
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.5);
     let originalHeight = 0;
-    await PDFGenerator.addImage(doc, report.input_img, imageXStart, y, imageWidth, "original image").then((newY) => {
-      originalHeight = newY - y;
-      doc.rect(imageXStart - 2, y - 2, imageWidth + 4, originalHeight + 4);
+    await PDFGenerator.addImage(doc, report.input_img, imageXStart, imageYStart, imageWidth, "original image").then((newY) => {
+      originalHeight = newY - imageYStart;
+      doc.rect(imageXStart - 2, imageYStart - 2, imageWidth + 4, originalHeight + 4);
     });
 
-    // Segmented Image
+    // Segmented Image Heading
     const segmentedX = imageXStart + imageWidth + gap;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(33, 150, 243);
-    doc.text("Segmented Image", segmentedX, y - 3, { align: "center" });
+    doc.text("Segmented Image", segmentedX + imageWidth / 2, y - 3, { align: "center" }); // Centered over image
+
+    // Segmented Image
     const segmentedSrc = segmentedImageDataUrl || report.output_img;
     console.log("Using segmented image source for PDF:", segmentedSrc?.substring(0, 50) + "...");
     let segmentedHeight = 0;
-    await PDFGenerator.addImage(doc, segmentedSrc, segmentedX, y, imageWidth, "segmented image").then((newY) => {
-      segmentedHeight = newY - y;
-      doc.rect(segmentedX - 2, y - 2, imageWidth + 4, segmentedHeight + 4);
+    await PDFGenerator.addImage(doc, segmentedSrc, segmentedX, imageYStart, imageWidth, "segmented image").then((newY) => {
+      segmentedHeight = newY - imageYStart;
+      doc.rect(segmentedX - 2, imageYStart - 2, imageWidth + 4, segmentedHeight + 4);
     });
 
-    y += Math.max(originalHeight, segmentedHeight) + 10; // Reduced spacing after images
+    y = imageYStart + Math.max(originalHeight, segmentedHeight) + 10; // Update y position
 
     // Findings Section
     doc.setFillColor(240, 248, 255);
