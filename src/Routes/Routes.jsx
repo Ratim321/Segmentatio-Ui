@@ -4,6 +4,8 @@ import Hero from "../components/Hero";
 import Research from "../components/Research";
 import Testimonials from "../components/Testimonials";
 import Demo from "../Pages/Demo";
+import Login from "../Pages/Login";
+import PrivateRoute from "../components/PrivateRoute";
 
 export const router = createBrowserRouter([
   {
@@ -21,8 +23,16 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "/login",
+        element: <Login />,
+      },
+      {
         path: "/demo",
-        element: <Demo />,
+        element: (
+          <PrivateRoute>
+            <Demo />
+          </PrivateRoute>
+        ),
       },
     ],
   },

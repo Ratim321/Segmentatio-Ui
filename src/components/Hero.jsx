@@ -1,9 +1,18 @@
 import React from "react";
-import { Brain, Activity, ScanFace, Microscope, HeartPulse, Sparkles, ChevronDown } from "lucide-react";
+import { Brain, Activity, ScanFace, Microscope, HeartPulse, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Hero() {
   const navigate = useNavigate();
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+
+  const handleDemoClick = () => {
+    if (isAuthenticated) {
+      navigate('/demo');
+    } else {
+      navigate('/login');
+    }
+  };
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-900 transition-colors">
@@ -36,8 +45,8 @@ export default function Hero() {
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-12 max-w-3xl mx-auto">Revolutionizing medical imaging with state-of-the-art AI technology. Precise, fast, and reliable segmentation for better diagnosis.</p>
 
           <div className="flex justify-center items-center gap-4">
-            <button onClick={() => navigate("/demo")} className="group px-8 py-3 bg-gradient-to-r text-lg from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 flex items-center gap-2">
-              Try Demo
+            <button onClick={handleDemoClick} className="group px-8 py-3 bg-gradient-to-r text-lg from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/30 transition-all duration-300 flex items-center gap-2">
+              {isAuthenticated ? 'Try Demo' : 'Login to Demo'}
               <HeartPulse className="w-5 h-5 group-hover:animate-pulse" />
             </button>
           </div>

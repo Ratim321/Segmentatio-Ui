@@ -1,107 +1,9 @@
+// MedicalReport.tsx
 import React, { useState, useContext, useEffect } from "react";
 import { Download, ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
-import { jsPDF } from "jspdf";
 import { ThemeContext } from "../../../context/ThemeContext";
 import { REGION_COLOR_MAP } from "../../../lib/constants";
-
-const PDFGenerator = {
-  getImageDataUrl: (imageUrl: string): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      console.log("Attempting to load image:", imageUrl);
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      const img = new Image();
-      img.crossOrigin = "Anonymous";
-      
-      img.onload = () => {
-        console.log("Image loaded successfully:", imageUrl);
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx?.drawImage(img, 0, 0);
-        try {
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          console.log("Converted to data URL:", dataUrl.substring(0, 50) + "...");
-          resolve(dataUrl);
-        } catch (error) {
-          console.error("Canvas conversion failed:", error);
-          reject(error);
-        }
-      };
-
-      img.onerror = (error) => {
-        console.error("Image failed to load:", imageUrl, error);
-        reject(error);
-      };
-
-      if (imageUrl.startsWith('data:')) {
-        console.log("Using data URI directly:", imageUrl.substring(0, 50) + "...");
-        resolve(imageUrl);
-      } else {
-        img.src = imageUrl;
-      }
-    });
-  },
-
-  addImage: async (doc: jsPDF, imageUrl: string, x: number, y: number, width: number, label: string): Promise<number> => {
-    try {
-      const dataUrl = await PDFGenerator.getImageDataUrl(imageUrl);
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          const aspectRatio = img.height / img.width;
-          const height = width * aspectRatio;
-          doc.addImage(dataUrl, 'JPEG', x, y, width, height);
-          console.log(`${label} added to PDF at ${x}, ${y}, ${width}x${height}`);
-          resolve(y + height);
-        };
-        img.onerror = () => {
-          console.error(`Failed to render ${label} in PDF`);
-          resolve(y);
-        };
-        img.src = dataUrl;
-      });
-    } catch (error) {
-      console.error(`Error processing ${label}:`, error);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(255, 0, 0);
-      doc.text(`[Failed to load ${label}]`, x, y);
-      return y + 20;
-    }
-  },
-
-  createInfoRow: (doc: jsPDF, label: string, value: string, x: number, y: number) => {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text(label + ":", x, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(value, x + 60, y);
-    return y + 10;
-  },
-
-  createTable: (doc: jsPDF, headers: string[], rows: string[][], startY: number, margin: number, width: number) => {
-    const cellPadding = 5;
-    const lineHeight = 10;
-    const colWidth = width / headers.length;
-
-    doc.setFont("helvetica", "bold");
-    headers.forEach((header, i) => {
-      doc.text(header, margin + (i * colWidth) + cellPadding, startY);
-    });
-
-    startY += lineHeight;
-    doc.setFont("helvetica", "normal");
-
-    rows.forEach(row => {
-      row.forEach((cell, i) => {
-        doc.text(cell, margin + (i * colWidth) + cellPadding, startY);
-      });
-      startY += lineHeight;
-    });
-
-    return startY;
-  }
-};
+import { generatePDFReport } from "./Report"; // Adjust the import path as needed
 
 interface Finding {
   type: string;
@@ -179,7 +81,8 @@ const FindingSection: React.FC<{
               if (key !== "type" && key !== "found" && key !== "confidence") {
                 return (
                   <p key={key} className={darkMode ? "text-gray-300" : "text-gray-600"}>
-                    <span className={darkMode ? "text-gray-400" : "text-gray-500"}>{key.replace(/_/g, " ")}:</span> {value}
+                    <span className={darkMode ? "text-gray-400" : "text-gray-500"}>{key.replace(/_/g, " ")}:</span>{" "}
+                    {value}
                   </p>
                 );
               }
@@ -196,6 +99,7 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
   const { darkMode } = useContext(ThemeContext);
   const [expandedSections, setExpandedSections] = useState<number[]>([]);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [segmentedImageUrl, setSegmentedImageUrl] = useState<string | null>(null);
   const [segmentedImageDataUrl, setSegmentedImageDataUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -207,156 +111,63 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
     }
   }, [activeSection, report.report, expandedSections]);
 
+  // Save the URL to localStorage
   useEffect(() => {
-    // Pre-fetch segmented image as a data URL
-    const fetchSegmentedImage = async () => {
-      try {
-        const dataUrl = await PDFGenerator.getImageDataUrl(report.output_img);
-        setSegmentedImageDataUrl(dataUrl);
-      } catch (error) {
-        console.error("Failed to pre-fetch segmented image:", error);
-        // Fallback to fetching via proxy or leaving it null
+    const saveSegmentedImageUrl = () => {
+      const storageKey = `segmentedImageUrl_${report.id || report.output_img.split("/").pop() || "default"}`;
+      const storedUrl = localStorage.getItem(storageKey);
+
+      console.log(`Checking localStorage for key: ${storageKey}`);
+      if (storedUrl) {
+        console.log("Found stored URL in localStorage:", storedUrl);
+        setSegmentedImageUrl(storedUrl);
+      } else if (report.output_img) {
+        console.log("No stored URL found, saving:", report.output_img);
+        try {
+          localStorage.setItem(storageKey, report.output_img);
+          console.log(`Saved URL to localStorage under key: ${storageKey}, value: ${report.output_img}`);
+          setSegmentedImageUrl(report.output_img);
+        } catch (error) {
+          console.error("Failed to save URL to localStorage:", error);
+          setSegmentedImageUrl(report.output_img); // Fallback
+        }
+      } else {
+        console.warn("No output_img provided in report");
+        setSegmentedImageUrl(null);
       }
     };
-    fetchSegmentedImage();
-  }, [report.output_img]);
+    saveSegmentedImageUrl();
+  }, [report.output_img, report.id]);
+
+  // Fetch the image data URL from the stored URL
+  useEffect(() => {
+    const fetchSegmentedImageData = async () => {
+      if (!segmentedImageUrl) {
+        console.log("No segmented image URL available to fetch");
+        setSegmentedImageDataUrl(null);
+        return;
+      }
+
+      try {
+        const dataUrl = await import("./Report").then((module) =>
+          module.PDFGenerator.getImageDataUrl(segmentedImageUrl)
+        );
+        console.log("Fetched segmented image data URL:", dataUrl.substring(0, 50) + "...");
+        setSegmentedImageDataUrl(dataUrl);
+      } catch (error) {
+        console.error("Failed to fetch segmented image data:", error);
+        setSegmentedImageDataUrl(null);
+      }
+    };
+    fetchSegmentedImageData();
+  }, [segmentedImageUrl]);
 
   const toggleSection = (index: number) => {
     setExpandedSections((prev) => (prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]));
   };
 
-  const downloadPDF = async () => {
-    if (isGeneratingPDF) return;
-    setIsGeneratingPDF(true);
-
-    try {
-      const doc = new jsPDF();
-      const margin = 15;
-      const pageWidth = doc.internal.pageSize.width;
-      const pageHeight = doc.internal.pageSize.height;
-      const contentWidth = pageWidth - 2 * margin;
-      let y = 20;
-
-      // Header with Color
-      doc.setFillColor(33, 150, 243);
-      doc.rect(0, 0, pageWidth, 30, "F");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.setTextColor(255, 255, 255);
-      doc.text("Medical Image Analysis Report", pageWidth / 2, y, { align: "center" });
-      y += 20;
-
-      // Images Section (Two Rows)
-      const imageWidth = contentWidth * 0.8;
-      const imageX = margin + (contentWidth - imageWidth) / 2;
-
-      // Original Image
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(33, 150, 243);
-      doc.text("Original Image", margin, y);
-      y += 10;
-      y = await PDFGenerator.addImage(doc, report.input_img, imageX, y, imageWidth, "original image");
-      y += 15;
-
-      // Segmented Image
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(33, 150, 243);
-      doc.text("Segmented Image", margin, y);
-      y += 10;
-      const segmentedSrc = segmentedImageDataUrl || report.output_img; // Use pre-fetched data URL if available
-      y = await PDFGenerator.addImage(doc, segmentedSrc, imageX, y, imageWidth, "segmented image");
-      y += 20;
-
-      // Check if we need a new page
-      if (y > pageHeight - 50) {
-        doc.addPage();
-        y = margin;
-      }
-
-      // Findings Section
-      doc.setFillColor(240, 248, 255);
-      doc.rect(margin, y - 5, contentWidth, 10, "F");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
-      doc.setTextColor(33, 150, 243);
-      doc.text("Findings", margin + 5, y);
-      y += 15;
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(51, 51, 51);
-      report.report.forEach((finding) => {
-        if (finding.found === 1) {
-          doc.setFillColor(REGION_COLOR_MAP[finding.type as keyof typeof REGION_COLOR_MAP] || "#666666");
-          doc.rect(margin, y - 4, 3, 8, "F");
-          doc.setFont("helvetica", "bold");
-          doc.text(finding.type.toUpperCase(), margin + 10, y);
-          if (finding.confidence) {
-            doc.setTextColor(46, 204, 113);
-            doc.text(`${finding.confidence.toFixed(1)}%`, margin + 60, y);
-            doc.setTextColor(51, 51, 51);
-          }
-          y += 8;
-
-          Object.entries(finding).forEach(([key, value]) => {
-            if (key !== "type" && key !== "found" && key !== "confidence") {
-              const label = key.replace(/_/g, " ");
-              doc.text(`${label}: ${value}`, margin + 15, y);
-              y += 6;
-            }
-          });
-          y += 5;
-        }
-      });
-
-      // BIRADS Assessment
-      if (report.BIRADS) {
-        if (y > pageHeight - 50) {
-          doc.addPage();
-          y = margin;
-        }
-        doc.setFillColor(255, 245, 238);
-        doc.rect(margin, y - 5, contentWidth, 10, "F");
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(14);
-        doc.setTextColor(231, 76, 60);
-        doc.text("Assessment", margin + 5, y);
-        y += 10;
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(12);
-        doc.setTextColor(51, 51, 51);
-        doc.text(`BIRADS Category: ${report.BIRADS}`, margin + 10, y);
-        y += 10;
-
-        if (report.comment) {
-          report.comment.forEach((comment) => {
-            doc.text(`• ${comment}`, margin + 15, y);
-            y += 8;
-          });
-        }
-      }
-
-      // Footer
-      const footerY = pageHeight - 15;
-      doc.setFont("helvetica", "italic");
-      doc.setFontSize(8);
-      doc.setTextColor(150, 150, 150);
-      doc.text(
-        "This report is generated automatically and should be reviewed by a qualified medical professional.",
-        margin,
-        footerY
-      );
-      doc.text(new Date().toLocaleString(), pageWidth - margin, footerY, { align: "right" });
-
-      doc.save(`medical-report-${new Date().getTime()}.pdf`);
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-    } finally {
-      setIsGeneratingPDF(false);
-    }
+  const handleDownloadPDF = () => {
+    generatePDFReport(report, segmentedImageDataUrl, setIsGeneratingPDF);
   };
 
   return (
@@ -364,13 +175,11 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-blue-600 dark:text-blue-400">Medical Report</h2>
         <button
-          onClick={downloadPDF}
+          onClick={handleDownloadPDF}
           disabled={isGeneratingPDF}
           className={`
             flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
-            ${darkMode 
-              ? "bg-gray-800 hover:bg-gray-700 text-white" 
-              : "bg-blue-100 hover:bg-blue-200 text-blue-700"}
+            ${darkMode ? "bg-gray-800 hover:bg-gray-700 text-white" : "bg-blue-100 hover:bg-blue-200 text-blue-700"}
             transition-colors
             disabled:opacity-50 disabled:cursor-not-allowed
           `}
@@ -381,15 +190,15 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
       </div>
 
       <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="space-y-2">
-            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Original Image</p>
+            <p className="text-sm font-medium text-center text-blue-600 dark:text-blue-400">Original Image</p>
             <div className="aspect-square bg-black/10 rounded-lg overflow-hidden">
               <img src={report.input_img} alt="Original" className="w-full h-full object-contain" />
             </div>
           </div>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Segmented Image</p>
+            <p className="text-sm font-medium  text-center text-blue-600 dark:text-blue-400">Segmented Image</p>
             <div className="aspect-square bg-black/10 rounded-lg overflow-hidden">
               <img
                 src={segmentedImageDataUrl || report.output_img}
@@ -401,42 +210,48 @@ export const MedicalReport: React.FC<MedicalReportProps> = ({ report, activeSect
         </div>
 
         {report.report.map((finding, index) => (
-          <FindingSection 
-            key={index} 
-            finding={finding} 
-            index={index} 
-            isExpanded={expandedSections.includes(index)} 
-            isActive={activeSection === finding.type} 
-            darkMode={darkMode} 
-            onToggle={() => toggleSection(index)} 
+          <FindingSection
+            key={index}
+            finding={finding}
+            index={index}
+            isExpanded={expandedSections.includes(index)}
+            isActive={activeSection === finding.type}
+            darkMode={darkMode}
+            onToggle={() => toggleSection(index)}
           />
         ))}
 
         {report.BIRADS && (
-          <div className={`
-            mt-6 pt-4 border-t
-            ${darkMode ? "border-gray-700" : "border-gray-200"}
-          `}>
+          <div className={`mt-6 pt-4 border-t ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
             <div className="flex items-start gap-3">
-              <AlertCircle className={`w-5 h-5 mt-0.5 ${Number(report.BIRADS) >= 4 ? "text-red-500" : "text-yellow-500"}`} />
+              <AlertCircle
+                className={`w-5 h-5 mt-0.5 ${Number(report.BIRADS) >= 4 ? "text-red-500" : "text-yellow-500"}`}
+              />
               <div>
                 <h3 className="text-lg font-medium text-red-600 dark:text-red-400 mb-2">Assessment</h3>
                 <div className="space-y-3">
-                  <div className={`
-                    inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                    ${Number(report.BIRADS) >= 4 
-                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" 
-                      : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"}
-                  `}>
+                  <div
+                    className={`
+                      inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                      ${
+                        Number(report.BIRADS) >= 4
+                          ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                          : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                      }
+                    `}
+                  >
                     BIRADS Category {report.BIRADS}
                   </div>
                   {report.comment && report.comment.length > 0 && (
                     <div className="space-y-2">
                       {report.comment.map((comment, index) => (
-                        <p key={index} className={`
-                          text-sm pl-4 border-l-2
-                          ${darkMode ? "text-gray-300 border-gray-700" : "text-gray-600 border-gray-200"}
-                        `}>
+                        <p
+                          key={index}
+                          className={`
+                            text-sm pl-4 border-l-2
+                            ${darkMode ? "text-gray-300 border-gray-700" : "text-gray-600 border-gray-200"}
+                          `}
+                        >
                           {comment}
                         </p>
                       ))}
